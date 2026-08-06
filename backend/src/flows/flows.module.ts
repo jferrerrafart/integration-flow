@@ -1,13 +1,16 @@
 import { Module } from '@nestjs/common';
 import { FlowsController } from './infrastructure/controllers/flows.controller';
-import { CreateFlowService } from './application/services/create-flow.service';
-import { DeleteFlowService } from './application/services/delete-flow.service';
-import { UpdateFlowService } from './application/services/update-flow.service';
-import { GetFlowService } from './application/services/get-flow.service';
-import { ListFlowsService } from './application/services/list-flows.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Flow } from './infrastructure/entities/Flow.entity';
+import { FlowComponent } from './infrastructure/entities/FlowComponent.entity';
+//import { FlowRepository } from './infrastructure/repositories/flow.repository';
+import { FlowFacade } from './application/flow.facade';
+import { FlowService } from './application/flow.service';
 
 @Module({
+  imports: [TypeOrmModule.forFeature([Flow, FlowComponent])],
   controllers: [FlowsController],
-  providers: [CreateFlowService, DeleteFlowService, UpdateFlowService, GetFlowService, ListFlowsService]
+  providers: [/* FlowRepository, */ FlowFacade, FlowService],
+  exports: [/* FlowRepository, */ FlowFacade],
 })
-export class FlowsModule {}
+export class FlowsModule { }
