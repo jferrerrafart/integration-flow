@@ -1,9 +1,9 @@
 import { Controller, Get, Param } from '@nestjs/common'
-import { ComponentDefinitionFacade } from 'src/component-definitions/application/component-definitions.facade';
+import { ComponentDefinitionFacade } from 'src/component-definition/application/component-definition.facade';
 import { FlowComponentRole } from 'src/shared/enums/flow-component-role.enum';
 
 @Controller('component-definitions')
-export class ComponentDefinitionsController {
+export class ComponentDefinitionController {
     constructor(
         private readonly facade: ComponentDefinitionFacade,
     ) { }

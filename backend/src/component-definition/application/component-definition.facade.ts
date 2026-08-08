@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { ComponentDefinitionService } from './component-definitions.service';
+import { ComponentDefinitionService } from './component-definition.service';
 import { FlowComponentRole } from 'src/shared/enums/flow-component-role.enum';
 
 @Injectable()
