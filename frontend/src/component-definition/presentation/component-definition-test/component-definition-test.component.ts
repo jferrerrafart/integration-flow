@@ -1,6 +1,7 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentDefinitionFacade } from '../../aplication/component-definition.facade';
-import { ComponentDefinition } from '../../domain/models/component-definition';
+import { ComponentDefinitionDto } from '../../dto/component-definition-dto';
+
 
 
 @Component({
@@ -22,7 +23,7 @@ import { ComponentDefinition } from '../../domain/models/component-definition';
 export class ComponentDefinitionTestComponent {
     private readonly facade = inject(ComponentDefinitionFacade);
 
-    consumers: ComponentDefinition[] = [];
+    consumers: ComponentDefinitionDto[] = [];
 
     ngOnInit(): void {
         this.facade.getConsumers().subscribe({

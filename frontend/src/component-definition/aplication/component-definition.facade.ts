@@ -2,11 +2,10 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 
-import {
-    ComponentDefinition,
-    ComponentRole,
-} from '../domain/models/component-definition';
+
 import { ComponentDefinitionService } from './component-definition.service';
+import { FlowComponentRole } from '../../shared/types/flow-component-role';
+import { ComponentDefinitionDto } from '../dto/component-definition-dto';
 
 @Injectable({
     providedIn: 'root',
@@ -14,22 +13,22 @@ import { ComponentDefinitionService } from './component-definition.service';
 export class ComponentDefinitionFacade {
     private readonly service = inject(ComponentDefinitionService);
 
-    getConsumers(): Observable<ComponentDefinition[]> {
+    getConsumers(): Observable<ComponentDefinitionDto[]> {
         return this.service.getConsumers();
     }
 
-    getServices(): Observable<ComponentDefinition[]> {
+    getServices(): Observable<ComponentDefinitionDto[]> {
         return this.service.getServices();
     }
 
-    getProducers(): Observable<ComponentDefinition[]> {
+    getProducers(): Observable<ComponentDefinitionDto[]> {
         return this.service.getProducers();
     }
 
     getDefinition(
-        role: ComponentRole,
+        role: FlowComponentRole,
         type: string,
-    ): Observable<ComponentDefinition> {
+    ): Observable<ComponentDefinitionDto> {
         return this.service.getDefinition(role, type);
     }
 }

@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, } from '@nestjs/common';
-import { FlowFacade } from 'src/flows/application/flow.facade';
-import { FlowDto } from 'src/flows/dto/flow.dto';
+import { FlowFacade } from 'src/flow/application/flow.facade';
+import { FlowDto } from 'src/flow/dto/flow.dto';
 import { ParseIntPipe } from '@nestjs/common';
 
 
-@Controller('flows')
-export class FlowsController {
+@Controller('flow')
+export class FlowController {
     constructor(
         private readonly flowFacade: FlowFacade,
     ) { }

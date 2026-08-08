@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service'
-import { FlowsModule } from './flows/flows.module';
+import { FlowsModule } from './flow/flows.module';
 import { ComponentDefinitionModule } from './component-definition/component-definition.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
