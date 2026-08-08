@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ComponentDefinitionsController } from './infrastructure/controllers/component-definitions.controller';
-import { ComponentDefinitionsService } from './application/services/component-definitions.service';
+import { ComponentDefinitionService } from './application/component-definitions.service';
+import { ComponentDefinitionFacade } from './application/component-definitions.facade';
 
 @Module({
   controllers: [ComponentDefinitionsController],
-  providers: [ComponentDefinitionsService]
+  providers: [ComponentDefinitionFacade, ComponentDefinitionService]
 })
-export class ComponentDefinitionsModule {}
+export class ComponentDefinitionsModule { }
