@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ComponentDefinitionTestComponent } from '../component-definition/presentation/component-definition-test/component-definition-test.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, ComponentDefinitionTestComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
