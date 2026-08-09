@@ -2,4 +2,14 @@
   <h1>Integration Flow Manager</h1>
 
   <button mat-raised-button (click)="openNewFlowDialog()">+ New Flow</button>
+
+  @if (flowFacade.loading()) {
+    <p>Loading flows...</p>
+  } @else {
+    <app-flow-list
+      [flows]="flowFacade.flows()"
+      (edit)="openEditFlowDialog($event)"
+      (delete)="deleteFlow($event)"
+    />
+  }
 </main>

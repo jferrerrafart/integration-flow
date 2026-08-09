@@ -12,7 +12,7 @@ import { FlowDto } from '../dto/flow.dto';
 export class FlowApiService {
     private readonly http = inject(HttpClient);
 
-    private readonly baseUrl = 'http://localhost:3000/flows';
+    private readonly baseUrl = 'http://localhost:3000/flow';
 
     getAll(): Observable<FlowResponseDto[]> {
         return this.http.get<FlowResponseDto[]>(this.baseUrl);

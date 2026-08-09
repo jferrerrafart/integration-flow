@@ -1,5 +1,5 @@
-import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Injectable, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 
 import { FlowService } from './flow.service';
 import { FlowDto } from '../dto/flow.dto';
@@ -10,24 +10,56 @@ import { FlowResponseDto } from '../dto/flow-response.dto';
 })
 export class FlowFacade {
     private readonly service = inject(FlowService);
+    readonly flows = signal<FlowResponseDto[]>([]);
+    readonly loading = signal(false);
+    readonly error = signal<string | null>(null);
 
-    getAll(): Observable<FlowResponseDto[]> {
-        return this.service.getAll();
+    async loadAll(): Promise<void> {
+        this.loading.set(true);
+        this.error.set(null);
+
+        try {
+            const flows = await firstValueFrom(this.service.getAll());
+            this.flows.set(flows);
+        } catch (error) {
+            this.error.set(this.getErrorMessage(error));
+            throw error;
+        } finally {
+            this.loading.set(false);
+        }
     }
 
-    getOne(id: number): Observable<FlowResponseDto> {
-        return this.service.getOne(id);
+    async getOne(id: number): Promise<FlowResponseDto> {
+        return firstValueFrom(this.service.getOne(id));
     }
 
-    create(dto: FlowDto): Observable<FlowResponseDto> {
-        return this.service.create(dto);
+    async create(dto: FlowDto): Promise<FlowResponseDto> {
+        const created = await firstValueFrom(this.service.create(dto));
+        await this.loadAll();
+
+        return created;
     }
 
-    update(id: number, dto: FlowDto): Observable<FlowResponseDto> {
-        return this.service.update(id, dto);
+    async update(id: number, dto: FlowDto): Promise<FlowResponseDto> {
+        const updated = await firstValueFrom(this.service.update(id, dto));
+        await this.loadAll();
+
+        return updated;
     }
 
-    remove(id: number): Observable<void> {
-        return this.service.remove(id);
+    async remove(id: number): Promise<void> {
+        await firstValueFrom(this.service.remove(id));
+        await this.loadAll();
+    }
+
+    private getErrorMessage(error: unknown): string {
+        if (typeof error === 'object' && error && 'error' in error) {
+            const responseError = error as { error?: { message?: string } };
+
+            return responseError.error?.message
+                ?? 'Unable to load flows';
+        }
+
+        return 'Unable to load flows';
     }
 }
