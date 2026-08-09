@@ -1,0 +1,18 @@
+.flow-list__table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.flow-list__table {
+  width: 100%;
+  min-width: 560px;
+}
+
+.flow-list__actions {
+  white-space: nowrap;
+}
+
+.flow-list__empty {
+  margin: 0;
+  color: rgba(0, 0, 0, 0.65);
+}
