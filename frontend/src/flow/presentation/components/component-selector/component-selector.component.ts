@@ -15,13 +15,13 @@ import { ComponentDefinitionDto } from '../../../../component-definition/dto/com
     styleUrl: './component-selector.component.scss',
 })
 export class ComponentSelectorComponent {
-    label = input.required<string>();
+    readonly label = input.required<string>();
 
-    components = input.required<ComponentDefinitionDto[]>();
+    readonly components = input.required<ComponentDefinitionDto[]>();
 
-    selectedComponent = signal<ComponentDefinitionDto | null>(null);
+    readonly selectedComponent = signal<ComponentDefinitionDto | null>(null);
 
-    componentSelected = output<ComponentDefinitionDto>();
+    readonly componentSelected = output<ComponentDefinitionDto>();
 
     onComponentSelected(component: ComponentDefinitionDto): void {
         this.selectedComponent.set(component);

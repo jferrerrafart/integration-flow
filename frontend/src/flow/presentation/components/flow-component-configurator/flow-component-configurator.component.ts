@@ -35,12 +35,14 @@ export class FlowComponentConfiguratorComponent {
     onComponentSelected(component: ComponentDefinitionDto): void {
         this.selectedComponent.set(component);
         this.configuration.set(null);
+        console.log('Selected:', component);
 
         this.facade.getDefinition(
             this.role(),
             component.type,
         ).subscribe({
             next: (configuration) => {
+                console.log('Configuration:', configuration);
                 this.configuration.set(configuration);
             },
             error: (error) => {

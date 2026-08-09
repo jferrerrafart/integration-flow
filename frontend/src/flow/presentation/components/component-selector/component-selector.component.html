@@ -3,7 +3,7 @@
 
   <mat-select
     [value]="selectedComponent()"
-    (valueChange)="onComponentSelected($event)"
+    (selectionChange)="onComponentSelected($event.value)"
   >
     @for (component of components(); track component.id) {
       <mat-option [value]="component" [disabled]="!component.available">

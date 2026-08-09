@@ -1,5 +1,9 @@
-<app-component-selector [label]="role()" [components]="components()" />
+<app-component-selector
+  [label]="role()"
+  [components]="components()"
+  (componentSelected)="onComponentSelected($event)"
+/>
 
 @if (configuration(); as configuration) {
-  <app-dynamic-configuration [configuration]="configuration" />
+  <app-dynamic-configuration class="dynamic-configuration" [configuration]="configuration" />
 }

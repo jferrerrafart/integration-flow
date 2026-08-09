@@ -1,7 +1,57 @@
-<div>
-  <h3>{{ configuration().name }}</h3>
+<form [formGroup]="form()">
+  @for (field of fields(); track field.name) {
+    <mat-form-field appearance="outline">
+      <mat-label>
+        {{ field.appinfo?.label ?? field.name }}
+      </mat-label>
 
-  <p>{{ configuration().description }}</p>
+      @switch (field.appinfo?.fieldType ?? field.type) {
+        @case ("boolean") {
+          <div class="boolean-field">
+            <mat-checkbox [formControlName]="field.name">
+              {{ field.appinfo?.label ?? field.name }}
+            </mat-checkbox>
 
-  <pre>{{ configuration().definition | json }}</pre>
-</div>
+            @if (field.description) {
+              <small>{{ field.description }}</small>
+            }
+          </div>
+        }
+
+        @case ("enumeration") {
+          <mat-select [formControlName]="field.name">
+            @for (option of field.enumeration ?? []; track option.value) {
+              <mat-option [value]="option.value">
+                {{ option.value }}
+              </mat-option>
+            }
+          </mat-select>
+        }
+
+        @case ("textenumeration") {
+          <mat-select [formControlName]="field.name">
+            @for (option of field.enumeration ?? []; track option.value) {
+              <mat-option [value]="option.value">
+                {{ option.value }}
+              </mat-option>
+            }
+          </mat-select>
+        }
+
+        @default {
+          <input matInput [formControlName]="field.name" />
+        }
+      }
+
+      @if (field.description) {
+        <mat-hint>
+          {{ field.description }}
+        </mat-hint>
+      }
+
+      @if (field.use === "required") {
+        <mat-error> This field is required </mat-error>
+      }
+    </mat-form-field>
+  }
+</form>
