@@ -5,5 +5,10 @@
 />
 
 @if (configuration(); as configuration) {
-  <app-dynamic-configuration class="dynamic-configuration" [configuration]="configuration" />
+  <app-dynamic-configuration
+    class="dynamic-configuration"
+    [configuration]="configuration"
+    [initialValue]="initialFormValue()"
+    (valueChanged)="onConfigurationChanged($event)"
+  />
 }

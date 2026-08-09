@@ -1,12 +1,30 @@
-<h2 mat-dialog-title>New Flow</h2>
+<h2 mat-dialog-title>{{ dialogTitle }}</h2>
 
 <mat-dialog-content class="flow-editor">
+  <form [formGroup]="flowForm" class="flow-editor__name">
+    <mat-form-field appearance="outline">
+      <mat-label>Flow Name</mat-label>
+      <input
+        matInput
+        formControlName="name"
+        placeholder="My integration flow"
+      />
+
+      @if (flowForm.controls.name.invalid && flowForm.controls.name.touched) {
+        <mat-error>Flow name is required</mat-error>
+      }
+    </mat-form-field>
+  </form>
+
   <section>
     <h3>Consumer</h3>
 
     <app-flow-component-configurator
       [role]="'consumer'"
       [components]="consumers()"
+      [initialComponentId]="initialComponentIdFor('consumer')"
+      [initialConfiguration]="initialConfigurationFor('consumer')"
+      (componentConfigured)="onComponentConfigured('consumer', $event)"
     />
   </section>
 
@@ -16,6 +34,9 @@
     <app-flow-component-configurator
       [role]="'service'"
       [components]="services()"
+      [initialComponentId]="initialComponentIdFor('service')"
+      [initialConfiguration]="initialConfigurationFor('service')"
+      (componentConfigured)="onComponentConfigured('service', $event)"
     />
   </section>
 
@@ -25,14 +46,26 @@
     <app-flow-component-configurator
       [role]="'producer'"
       [components]="producers()"
+      [initialComponentId]="initialComponentIdFor('producer')"
+      [initialConfiguration]="initialConfigurationFor('producer')"
+      (componentConfigured)="onComponentConfigured('producer', $event)"
     />
   </section>
+
+  @if (errorMessage(); as errorMessage) {
+    <p class="flow-editor__error">{{ errorMessage }}</p>
+  }
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
   <button mat-button mat-dialog-close>Cancel</button>
 
-  <button mat-raised-button color="primary" (click)="createFlow()">
-    Create Flow
+  <button
+    mat-raised-button
+    color="primary"
+    [disabled]="loading()"
+    (click)="createFlow()"
+  >
+    {{ editingFlow ? "Save Changes" : "Create Flow" }}
   </button>
 </mat-dialog-actions>

@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { FlowService } from './flow.service';
 import { FlowDto } from '../dto/flow.dto';
 import { FlowResponseDto } from '../dto/flow-response.dto';
+import { getHttpErrorMessage } from '../../shared/utils/http-error.util';
 
 @Injectable({
     providedIn: 'root',
@@ -22,7 +23,10 @@ export class FlowFacade {
             const flows = await firstValueFrom(this.service.getAll());
             this.flows.set(flows);
         } catch (error) {
-            this.error.set(this.getErrorMessage(error));
+            this.error.set(getHttpErrorMessage(
+                error,
+                'Unable to load flows',
+            ));
             throw error;
         } finally {
             this.loading.set(false);
@@ -50,16 +54,5 @@ export class FlowFacade {
     async remove(id: number): Promise<void> {
         await firstValueFrom(this.service.remove(id));
         await this.loadAll();
-    }
-
-    private getErrorMessage(error: unknown): string {
-        if (typeof error === 'object' && error && 'error' in error) {
-            const responseError = error as { error?: { message?: string } };
-
-            return responseError.error?.message
-                ?? 'Unable to load flows';
-        }
-
-        return 'Unable to load flows';
     }
 }

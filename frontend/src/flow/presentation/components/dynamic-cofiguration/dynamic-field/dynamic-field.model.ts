@@ -4,7 +4,11 @@ export interface DynamicField {
     use: 'required' | 'optional';
     description?: string;
     order: number;
-    defaultValue?: string;
+    defaultValue?: string | boolean;
+    sequence?: boolean;
+    minItems?: number;
+    maxItems?: number;
+    sequenceTemplateFields?: DynamicField[];
 
     appinfo?: {
         fieldType?: string;

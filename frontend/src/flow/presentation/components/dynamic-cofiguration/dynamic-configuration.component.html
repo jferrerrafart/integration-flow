@@ -1,24 +1,100 @@
 <form [formGroup]="form()">
   @for (field of fields(); track field.name) {
-    <mat-form-field appearance="outline">
-      <mat-label>
-        {{ field.appinfo?.label ?? field.name }}
-      </mat-label>
+    @if (field.sequence) {
+      <div class="sequence-field">
+        <div class="sequence-field__header">
+          <strong>{{ getFieldLabel(field) }}</strong>
 
-      @switch (field.appinfo?.fieldType ?? field.type) {
-        @case ("boolean") {
-          <div class="boolean-field">
-            <mat-checkbox [formControlName]="field.name">
-              {{ field.appinfo?.label ?? field.name }}
-            </mat-checkbox>
+          @if (field.description) {
+            <small>{{ field.description }}</small>
+          }
+        </div>
 
-            @if (field.description) {
-              <small>{{ field.description }}</small>
-            }
-          </div>
+        <div class="sequence-field__items" [formArrayName]="field.name">
+          @for (item of getSequenceControls(field); track $index) {
+            <div class="sequence-item" [formGroupName]="$index">
+              @if ((field.sequenceTemplateFields?.length ?? 0) > 0) {
+                @for (
+                  templateField of field.sequenceTemplateFields ?? [];
+                  track templateField.name
+                ) {
+                  @if (isBooleanField(templateField)) {
+                    <div class="boolean-field">
+                      <mat-checkbox [formControlName]="templateField.name">
+                        {{ getFieldLabel(templateField) }}
+                      </mat-checkbox>
+                    </div>
+                  } @else {
+                    <mat-form-field appearance="outline">
+                      <mat-label>
+                        {{ getFieldLabel(templateField) }}
+                      </mat-label>
+
+                      @if (isSelectField(templateField)) {
+                        <mat-select [formControlName]="templateField.name">
+                          @for (
+                            option of templateField.enumeration ?? [];
+                            track option.value
+                          ) {
+                            <mat-option [value]="option.value">
+                              {{ option.value }}
+                            </mat-option>
+                          }
+                        </mat-select>
+                      } @else {
+                        <input
+                          matInput
+                          [formControlName]="templateField.name"
+                        />
+                      }
+                    </mat-form-field>
+                  }
+                }
+              } @else {
+                <mat-form-field appearance="outline">
+                  <mat-label>Value</mat-label>
+                  <input matInput formControlName="value" />
+                </mat-form-field>
+              }
+
+              <button
+                type="button"
+                class="sequence-item__remove"
+                [disabled]="!canRemoveSequenceItem(field)"
+                (click)="removeSequenceItem(field, $index)"
+              >
+                Remove
+              </button>
+            </div>
+          }
+        </div>
+
+        <button
+          type="button"
+          class="sequence-field__add"
+          [disabled]="!canAddSequenceItem(field)"
+          (click)="addSequenceItem(field)"
+        >
+          Add {{ getFieldLabel(field) }}
+        </button>
+      </div>
+    } @else if (isBooleanField(field)) {
+      <div class="boolean-field">
+        <mat-checkbox [formControlName]="field.name">
+          {{ getFieldLabel(field) }}
+        </mat-checkbox>
+
+        @if (field.description) {
+          <small>{{ field.description }}</small>
         }
+      </div>
+    } @else {
+      <mat-form-field appearance="outline">
+        <mat-label>
+          {{ getFieldLabel(field) }}
+        </mat-label>
 
-        @case ("enumeration") {
+        @if (isSelectField(field)) {
           <mat-select [formControlName]="field.name">
             @for (option of field.enumeration ?? []; track option.value) {
               <mat-option [value]="option.value">
@@ -26,32 +102,20 @@
               </mat-option>
             }
           </mat-select>
-        }
-
-        @case ("textenumeration") {
-          <mat-select [formControlName]="field.name">
-            @for (option of field.enumeration ?? []; track option.value) {
-              <mat-option [value]="option.value">
-                {{ option.value }}
-              </mat-option>
-            }
-          </mat-select>
-        }
-
-        @default {
+        } @else {
           <input matInput [formControlName]="field.name" />
         }
-      }
 
-      @if (field.description) {
-        <mat-hint>
-          {{ field.description }}
-        </mat-hint>
-      }
+        @if (field.description) {
+          <mat-hint>
+            {{ field.description }}
+          </mat-hint>
+        }
 
-      @if (field.use === "required") {
-        <mat-error> This field is required </mat-error>
-      }
-    </mat-form-field>
+        @if (field.use === "required") {
+          <mat-error> This field is required </mat-error>
+        }
+      </mat-form-field>
+    }
   }
 </form>

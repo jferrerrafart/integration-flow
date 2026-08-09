@@ -10,4 +10,20 @@ h2[mat-dialog-title] {
   min-width: 500px;
   min-height: 500px;
   padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.flow-editor__name {
+  display: block;
+}
+
+.flow-editor__name mat-form-field {
+  width: 100%;
+}
+
+.flow-editor__error {
+  color: #b3261e;
+  margin: 0;
 }
