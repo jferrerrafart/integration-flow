@@ -1,0 +1,5 @@
+<app-component-selector [label]="role()" [components]="components()" />
+
+@if (configuration(); as configuration) {
+  <app-dynamic-configuration [configuration]="configuration" />
+}

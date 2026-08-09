@@ -1,0 +1,32 @@
+<mat-form-field appearance="outline">
+  <mat-label>{{ label() }}</mat-label>
+
+  <mat-select
+    [value]="selectedComponent()"
+    (valueChange)="onComponentSelected($event)"
+  >
+    @for (component of components(); track component.id) {
+      <mat-option [value]="component" [disabled]="!component.available">
+        <div class="component-option">
+          <div class="component-option__name">
+            {{ component.name }}
+
+            @if (!component.available) {
+              <span class="component-option__unavailable"> Unavailable </span>
+            }
+          </div>
+
+          <div class="component-option__description">
+            {{ component.description }}
+          </div>
+        </div>
+      </mat-option>
+    }
+  </mat-select>
+
+  @if (selectedComponent(); as selected) {
+    <mat-hint>
+      {{ selected.description }}
+    </mat-hint>
+  }
+</mat-form-field>

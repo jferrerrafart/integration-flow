@@ -5,7 +5,8 @@ import { Observable } from 'rxjs';
 
 import { ComponentDefinitionApiService } from '../infrastructure/component-definition.api';
 import { FlowComponentRole } from '../../shared/types/flow-component-role';
-import { ComponentDefinitionDto } from '../dto/component-definition-dto';
+import { ComponentDefinitionDto } from '../dto/component-definition.dto';
+import { ComponentDefinitionConfigurationDto } from '../dto/component-definition-configuration.dto';
 
 @Injectable({
     providedIn: 'root',
@@ -13,22 +14,16 @@ import { ComponentDefinitionDto } from '../dto/component-definition-dto';
 export class ComponentDefinitionService {
     private readonly api = inject(ComponentDefinitionApiService);
 
-    getConsumers(): Observable<ComponentDefinitionDto[]> {
-        return this.api.getAll('consumer');
-    }
-
-    getServices(): Observable<ComponentDefinitionDto[]> {
-        return this.api.getAll('service');
-    }
-
-    getProducers(): Observable<ComponentDefinitionDto[]> {
-        return this.api.getAll('producer');
+    getByRole(
+        role: FlowComponentRole,
+    ): Observable<ComponentDefinitionDto[]> {
+        return this.api.getAll(role);
     }
 
     getDefinition(
         role: FlowComponentRole,
         type: string,
-    ): Observable<ComponentDefinitionDto> {
+    ): Observable<ComponentDefinitionConfigurationDto> {
         return this.api.getDefinition(role, type);
     }
 }

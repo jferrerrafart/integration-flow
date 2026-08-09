@@ -1,0 +1,38 @@
+<h2 mat-dialog-title>New Flow</h2>
+
+<mat-dialog-content class="flow-editor">
+  <section>
+    <h3>Consumer</h3>
+
+    <app-flow-component-configurator
+      [role]="'consumer'"
+      [components]="consumers()"
+    />
+  </section>
+
+  <section>
+    <h3>Services</h3>
+
+    <app-flow-component-configurator
+      [role]="'service'"
+      [components]="services()"
+    />
+  </section>
+
+  <section>
+    <h3>Producer</h3>
+
+    <app-flow-component-configurator
+      [role]="'producer'"
+      [components]="producers()"
+    />
+  </section>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+
+  <button mat-raised-button color="primary" (click)="createFlow()">
+    Create Flow
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,13 @@
+:host {
+  display: block;
+}
+
+h2[mat-dialog-title] {
+  text-align: center;
+}
+
+.flow-editor {
+  min-width: 500px;
+  min-height: 500px;
+  padding-top: 8px;
+}

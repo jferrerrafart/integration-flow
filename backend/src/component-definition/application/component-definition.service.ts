@@ -4,6 +4,7 @@ import { join } from 'path';
 
 import { FlowComponentRole } from 'src/shared/enums/flow-component-role.enum';
 import { ComponentDefinitionDto } from '../dto/component-definition.dto';
+import { ComponentDefinitionConfigurationDto } from '../dto/component-definition-configuration.dto';
 
 @Injectable()
 export class ComponentDefinitionService {
@@ -58,7 +59,7 @@ export class ComponentDefinitionService {
     getDefinition(
         role: FlowComponentRole,
         type: string,
-    ) {
+    ): ComponentDefinitionConfigurationDto {
         const component = this.getOne(role, type);
 
         if (!component.available) {
@@ -88,7 +89,7 @@ export class ComponentDefinitionService {
                 return this.library.services_index;
 
             case 'producer':
-                return this.library.producers_index;
+                return this.library.producer_index;
 
             default:
                 throw new Error(

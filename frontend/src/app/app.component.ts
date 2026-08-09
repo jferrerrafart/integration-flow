@@ -1,10 +1,9 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ComponentDefinitionTestComponent } from '../component-definition/presentation/component-definition-test/component-definition-test.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ComponentDefinitionTestComponent],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.component.scss'

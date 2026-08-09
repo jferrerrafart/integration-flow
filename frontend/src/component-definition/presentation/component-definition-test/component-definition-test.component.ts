@@ -1,6 +1,6 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentDefinitionFacade } from '../../aplication/component-definition.facade';
-import { ComponentDefinitionDto } from '../../dto/component-definition-dto';
+import { ComponentDefinitionDto } from '../../dto/component-definition.dto';
 
 
 
