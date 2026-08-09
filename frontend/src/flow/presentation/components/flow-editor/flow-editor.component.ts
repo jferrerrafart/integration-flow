@@ -29,6 +29,17 @@ interface ConfiguredComponent {
     configuration: Record<string, unknown>;
 }
 
+interface RequiredConfiguredComponents {
+    consumer: ConfiguredComponent | null;
+    producer: ConfiguredComponent | null;
+}
+
+interface ServiceSlot {
+    id: number;
+    initialComponentId: string | null;
+    initialConfiguration: Record<string, unknown> | null;
+}
+
 export interface FlowEditorDialogData {
     flow?: FlowResponseDto;
 }
@@ -75,11 +86,14 @@ export class FlowEditorComponent implements OnInit {
         }),
     });
 
-    readonly configured = signal<Record<FlowComponentRole, ConfiguredComponent | null>>({
+    readonly configured = signal<RequiredConfiguredComponents>({
         consumer: null,
-        service: null,
         producer: null,
     });
+
+    readonly configuredServices = signal<Record<number, ConfiguredComponent | null>>({});
+    readonly serviceSlots = signal<ServiceSlot[]>([]);
+    private nextServiceSlotId = 1;
 
     readonly editingFlow = this.dialogData?.flow ?? null;
 
@@ -96,7 +110,24 @@ export class FlowEditorComponent implements OnInit {
             this.flowForm.patchValue({
                 name: this.editingFlow.name,
             });
+
+            const services = this.editingFlow.components
+                .filter((component) => component.role === 'service')
+                .sort((a, b) => a.position - b.position);
+
+            if (services.length > 0) {
+                const slots = services.map((service) => ({
+                    id: this.nextServiceSlotId++,
+                    initialComponentId: service.componentId,
+                    initialConfiguration: service.configuration,
+                }));
+
+                this.serviceSlots.set(slots);
+                return;
+            }
         }
+
+        this.addServiceSlot();
     }
 
     onComponentConfigured(
@@ -107,6 +138,44 @@ export class FlowEditorComponent implements OnInit {
             ...state,
             [role]: configuredComponent,
         }));
+    }
+
+    onServiceConfigured(
+        slotId: number,
+        configuredComponent: ConfiguredComponent,
+    ): void {
+        this.configuredServices.update((state) => ({
+            ...state,
+            [slotId]: configuredComponent,
+        }));
+    }
+
+    addServiceSlot(): void {
+        const slot: ServiceSlot = {
+            id: this.nextServiceSlotId++,
+            initialComponentId: null,
+            initialConfiguration: null,
+        };
+
+        this.serviceSlots.update((slots) => [
+            ...slots,
+            slot,
+        ]);
+    }
+
+    removeServiceSlot(slotId: number): void {
+        this.serviceSlots.update((slots) => slots
+            .filter((slot) => slot.id !== slotId));
+
+        this.configuredServices.update((state) => {
+            const nextState = { ...state };
+            delete nextState[slotId];
+            return nextState;
+        });
+    }
+
+    trackByServiceSlotId(_: number, slot: ServiceSlot): number {
+        return slot.id;
     }
 
     initialComponentIdFor(
@@ -166,8 +235,11 @@ export class FlowEditorComponent implements OnInit {
     private buildPayload(): FlowDto | null {
         const configured = this.configured();
         const consumer = configured.consumer;
-        const service = configured.service;
         const producer = configured.producer;
+        const configuredServices = this.configuredServices();
+        const serviceComponents = this.serviceSlots()
+            .map((slot) => configuredServices[slot.id] ?? null)
+            .filter((service): service is ConfiguredComponent => !!service);
 
         if (!consumer || !producer) {
             return null;
@@ -182,11 +254,11 @@ export class FlowEditorComponent implements OnInit {
             },
         ];
 
-        if (service) {
+        for (const [index, service] of serviceComponents.entries()) {
             components.push({
                 role: 'service',
                 componentId: service.component.id,
-                position: 1,
+                position: index + 1,
                 configuration: service.configuration,
             });
         }

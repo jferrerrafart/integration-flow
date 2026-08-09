@@ -29,15 +29,42 @@
   </section>
 
   <section>
-    <h3>Services</h3>
+    <div class="flow-editor__services-header">
+      <h3>Services</h3>
 
-    <app-flow-component-configurator
-      [role]="'service'"
-      [components]="services()"
-      [initialComponentId]="initialComponentIdFor('service')"
-      [initialConfiguration]="initialConfigurationFor('service')"
-      (componentConfigured)="onComponentConfigured('service', $event)"
-    />
+      <button mat-stroked-button type="button" (click)="addServiceSlot()">
+        + Add Service
+      </button>
+    </div>
+
+    @if (serviceSlots().length === 0) {
+      <p class="flow-editor__services-empty">No services configured.</p>
+    }
+
+    @for (slot of serviceSlots(); track slot.id) {
+      <div class="flow-editor__service-slot">
+        <div class="flow-editor__service-slot-header">
+          <h4>Service {{ $index + 1 }}</h4>
+
+          <button
+            mat-button
+            color="warn"
+            type="button"
+            (click)="removeServiceSlot(slot.id)"
+          >
+            Remove
+          </button>
+        </div>
+
+        <app-flow-component-configurator
+          [role]="'service'"
+          [components]="services()"
+          [initialComponentId]="slot.initialComponentId"
+          [initialConfiguration]="slot.initialConfiguration"
+          (componentConfigured)="onServiceConfigured(slot.id, $event)"
+        />
+      </div>
+    }
   </section>
 
   <section>
