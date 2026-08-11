@@ -12,6 +12,7 @@ import {
     FormControl,
     FormGroup,
     ReactiveFormsModule,
+    ValidatorFn,
     Validators,
 } from '@angular/forms';
 import { switchMap } from 'rxjs';
@@ -22,6 +23,12 @@ import { MatSelectModule } from '@angular/material/select';
 
 import { ComponentDefinitionConfigurationDto } from '../../../../component-definition/dto/component-definition-configuration.dto';
 import { DynamicField } from './dynamic-field/dynamic-field.model';
+import { mapDynamicField } from './dynamic-field/dynamic-field.mapper';
+import {
+    buildFieldValidators,
+    resolveFieldErrorMessage,
+    resolveSequenceErrorMessage,
+} from './dynamic-field/dynamic-field.validators';
 
 @Component({
     selector: 'app-dynamic-configuration',
@@ -48,7 +55,7 @@ export class DynamicConfigurationComponent {
         const definition = this.configuration().definition;
 
         return Object.entries(definition)
-            .map(([name, value]) => this.mapField(name, value))
+            .map(([name, value]) => mapDynamicField(name, value))
             .sort((a, b) => a.order - b.order);
     });
 
@@ -170,64 +177,64 @@ export class DynamicConfigurationComponent {
         return field.appinfo?.label || field.name;
     }
 
-    trackByFieldName(_: number, field: DynamicField): string {
-        return field.name;
+    fieldHasError(
+        field: DynamicField,
+        formGroup?: FormGroup,
+    ): boolean {
+        const control = this.getFieldControl(field, formGroup);
+
+        if (!control) {
+            return false;
+        }
+
+        return control.invalid
+            && (control.touched || control.dirty);
     }
 
-    private mapField(name: string, value: unknown): DynamicField {
-        const field = value as Record<string, unknown>;
-        const appinfo =
-            field['appinfo'] as Record<string, unknown> | undefined;
-        const sequence = appinfo?.['sequence'] === true;
-        const sequenceTemplateFields =
-            this.mapSequenceTemplate(appinfo);
+    getFieldErrorMessage(
+        field: DynamicField,
+        formGroup?: FormGroup,
+    ): string | null {
+        const control = this.getFieldControl(field, formGroup);
 
-        return {
-            name,
-            type: String(field['type'] ?? ''),
-            use: field['use'] === 'required'
-                ? 'required'
-                : 'optional',
-            description:
-                typeof field['description'] === 'string'
-                    ? field['description']
-                    : undefined,
-            order:
-                typeof field['order'] === 'number'
-                    ? field['order']
-                    : 0,
-            defaultValue: this.resolveDefaultValue(field, appinfo),
-            sequence,
-            minItems: this.parseMinItems(appinfo),
-            maxItems: this.parseMaxItems(appinfo),
-            sequenceTemplateFields,
-            appinfo: appinfo
-                ? {
-                    fieldType:
-                        typeof appinfo['fieldType'] === 'string'
-                            ? appinfo['fieldType']
-                            : undefined,
-                    label:
-                        typeof appinfo['label'] === 'string'
-                            ? appinfo['label']
-                            : undefined,
-                    dynamic:
-                        typeof appinfo['dynamic'] === 'boolean'
-                            ? appinfo['dynamic']
-                            : undefined,
-                    advanced:
-                        typeof appinfo['advanced'] === 'boolean'
-                            ? appinfo['advanced']
-                            : undefined,
-                }
-                : undefined,
-            enumeration:
-                Array.isArray(appinfo?.['enumeration'])
-                    ? appinfo['enumeration'] as Array<{ value: string }>
-                    : Array.isArray(field['enumeration'])
-                        ? field['enumeration'] as Array<{ value: string }>
-                        : undefined,
-        };
+        if (!control || !this.fieldHasError(field, formGroup)) {
+            return null;
+        }
+
+        if (control.hasError('required')) {
+            return 'This field is required';
+        }
+
+        return resolveFieldErrorMessage(control);
+    }
+
+    sequenceHasError(field: DynamicField): boolean {
+        const array = this.getSequenceArray(field);
+
+        return array.invalid
+            && (array.touched || array.dirty);
+    }
+
+    getSequenceErrorMessage(field: DynamicField): string | null {
+        const array = this.getSequenceArray(field);
+
+        if (!this.sequenceHasError(field)) {
+            return null;
+        }
+
+        if (array.hasError('minlength')) {
+            return `Add at least ${field.minItems} item(s)`;
+        }
+
+        if (array.hasError('maxlength')) {
+            return `Maximum ${field.maxItems} item(s) allowed`;
+        }
+
+        return resolveSequenceErrorMessage(array, field);
+    }
+
+    trackByFieldName(_: number, field: DynamicField): string {
+        return field.name;
     }
 
     private createScalarControl(
@@ -235,9 +242,7 @@ export class DynamicConfigurationComponent {
     ): FormControl {
         return new FormControl(
             field.defaultValue ?? null,
-            field.use === 'required'
-                ? Validators.required
-                : [],
+            buildFieldValidators(field),
         );
     }
 
@@ -246,12 +251,21 @@ export class DynamicConfigurationComponent {
     ): FormArray<FormGroup> {
         const items: FormGroup[] = [];
         const minItems = field.minItems ?? 0;
+        const validators: ValidatorFn[] = [];
 
         for (let index = 0; index < minItems; index += 1) {
             items.push(this.createSequenceItemGroup(field));
         }
 
-        return new FormArray(items);
+        if (minItems > 0) {
+            validators.push(Validators.minLength(minItems));
+        }
+
+        if (field.maxItems !== undefined) {
+            validators.push(Validators.maxLength(field.maxItems));
+        }
+
+        return new FormArray(items, validators);
     }
 
     private createSequenceItemGroup(
@@ -280,91 +294,13 @@ export class DynamicConfigurationComponent {
         return this.form().get(field.name) as FormArray<FormGroup>;
     }
 
-    private parseMinItems(
-        appinfo?: Record<string, unknown>,
-    ): number {
-        const rawMin = appinfo?.['min'];
+    private getFieldControl(
+        field: DynamicField,
+        formGroup?: FormGroup,
+    ): AbstractControl | null {
+        const group = (formGroup ?? this.form()) as FormGroup;
 
-        if (typeof rawMin !== 'string') {
-            return 0;
-        }
-
-        const parsed = Number(rawMin);
-
-        return Number.isFinite(parsed)
-            ? parsed
-            : 0;
+        return group.get(field.name);
     }
 
-    private parseMaxItems(
-        appinfo?: Record<string, unknown>,
-    ): number | undefined {
-        const rawMax = appinfo?.['max'];
-
-        if (typeof rawMax !== 'string') {
-            return undefined;
-        }
-
-        if (rawMax === 'unbounded') {
-            return undefined;
-        }
-
-        const parsed = Number(rawMax);
-
-        return Number.isFinite(parsed)
-            ? parsed
-            : undefined;
-    }
-
-    private mapSequenceTemplate(
-        appinfo?: Record<string, unknown>,
-    ): DynamicField[] | undefined {
-        const rawTemplate = appinfo?.['sequencetemplate'];
-
-        if (!rawTemplate || Array.isArray(rawTemplate)) {
-            return undefined;
-        }
-
-        if (typeof rawTemplate !== 'object') {
-            return undefined;
-        }
-
-        const template =
-            rawTemplate as Record<string, unknown>;
-
-        return Object.entries(template)
-            .map(([name, value]) => this.mapField(name, value))
-            .sort((a, b) => a.order - b.order);
-    }
-
-    private resolveDefaultValue(
-        field: Record<string, unknown>,
-        appinfo?: Record<string, unknown>,
-    ): string | boolean | undefined {
-        const fieldType =
-            typeof appinfo?.['fieldType'] === 'string'
-                ? appinfo['fieldType']
-                : typeof field['type'] === 'string'
-                    ? field['type']
-                    : undefined;
-
-        const rawDefault =
-            field['defaultValue'] ?? appinfo?.['defaultValue'];
-
-        if (fieldType === 'boolean') {
-            if (typeof rawDefault === 'boolean') {
-                return rawDefault;
-            }
-
-            if (typeof rawDefault === 'string') {
-                return rawDefault.toLowerCase() === 'true';
-            }
-
-            return undefined;
-        }
-
-        return typeof rawDefault === 'string'
-            ? rawDefault
-            : undefined;
-    }
 }

@@ -47,6 +47,13 @@
                           [formControlName]="templateField.name"
                         />
                       }
+
+                      @if (
+                        getFieldErrorMessage(templateField, item);
+                        as errorMessage
+                      ) {
+                        <mat-error>{{ errorMessage }}</mat-error>
+                      }
                     </mat-form-field>
                   }
                 }
@@ -68,6 +75,10 @@
             </div>
           }
         </div>
+
+        @if (getSequenceErrorMessage(field); as sequenceError) {
+          <p class="sequence-field__error">{{ sequenceError }}</p>
+        }
 
         <button
           type="button"
@@ -112,8 +123,8 @@
           </mat-hint>
         }
 
-        @if (field.use === "required") {
-          <mat-error> This field is required </mat-error>
+        @if (getFieldErrorMessage(field); as errorMessage) {
+          <mat-error>{{ errorMessage }}</mat-error>
         }
       </mat-form-field>
     }

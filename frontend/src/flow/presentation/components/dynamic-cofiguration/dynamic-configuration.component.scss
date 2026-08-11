@@ -48,6 +48,12 @@ form {
   cursor: not-allowed;
 }
 
+.sequence-field__error {
+  color: #b3261e;
+  font-size: 12px;
+  margin: 0;
+}
+
 mat-form-field {
   display: block;
   width: 100%;
