@@ -158,20 +158,19 @@ export class FlowEditorComponent implements OnInit {
         return slot.id;
     }
 
-    initialComponentIdFor(
+    initialConfiguredFor(
         role: FlowComponentRole,
-    ): string | null {
+    ): ConfiguredComponent | null {
         const component = this.initialComponentFor(role);
 
-        return component?.componentId ?? null;
-    }
+        if (!component) {
+            return null;
+        }
 
-    initialConfigurationFor(
-        role: FlowComponentRole,
-    ): Record<string, unknown> | null {
-        const component = this.initialComponentFor(role);
-
-        return component?.configuration ?? null;
+        return {
+            componentId: component.componentId,
+            configuration: component.configuration,
+        };
     }
 
     async createFlow(): Promise<void> {

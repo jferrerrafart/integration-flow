@@ -6,6 +6,7 @@ import { DynamicConfigurationComponent } from '../dynamic-cofiguration/dynamic-c
 import { ComponentDefinitionDto } from '../../../../component-definition/dto/component-definition.dto';
 import { ComponentDefinitionConfigurationDto } from '../../../../component-definition/dto/component-definition-configuration.dto';
 import { ComponentDefinitionFacade } from '../../../../component-definition/aplication/component-definition.facade';
+import { ConfiguredComponent } from '../../../aplication/flow-editor.service';
 import { FlowComponentRole } from '../../../../shared/types/flow-component-role';
 
 @Component({
@@ -30,10 +31,8 @@ export class FlowComponentConfiguratorComponent {
         configuration: Record<string, unknown>;
     }>();
 
-    readonly initialComponentId = input<string | null>(null);
-
-    readonly initialConfiguration =
-        input<Record<string, unknown> | null>(null);
+    readonly initialConfigured =
+        input<ConfiguredComponent | null>(null);
 
     private readonly facade = inject(ComponentDefinitionFacade);
 
@@ -50,26 +49,30 @@ export class FlowComponentConfiguratorComponent {
 
     constructor() {
         effect(() => {
-            const initialComponentId = this.initialComponentId();
+            const initialConfigured = this.initialConfigured();
             const components = this.components();
             const selected = this.selectedComponent();
 
-            if (!initialComponentId || selected) {
+            if (!initialConfigured || selected) {
                 return;
             }
 
             const initialComponent = components.find(
-                (component) => component.id === initialComponentId,
+                (component) => component.id === initialConfigured.componentId,
             );
 
             if (initialComponent) {
-                void this.onComponentSelected(initialComponent);
+                void this.onComponentSelected(
+                    initialComponent,
+                    initialConfigured.configuration,
+                );
             }
         });
     }
 
     async onComponentSelected(
         component: ComponentDefinitionDto,
+        initialConfiguration: Record<string, unknown> | null = null,
     ): Promise<void> {
         this.selectedComponent.set(component);
         this.configuration.set(null);
@@ -81,9 +84,6 @@ export class FlowComponentConfiguratorComponent {
             );
 
             this.configuration.set(configuration);
-
-            const initialConfiguration =
-                this.initialConfiguration();
             this.initialFormValue.set(initialConfiguration);
             this.configurationValue.set(initialConfiguration);
 

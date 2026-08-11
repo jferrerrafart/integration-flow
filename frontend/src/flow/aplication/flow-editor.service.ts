@@ -12,8 +12,6 @@ export interface ConfiguredComponent {
 export interface ServiceSlot {
     id: number;
     configured: ConfiguredComponent | null;
-    initialComponentId: string | null;
-    initialConfiguration: Record<string, unknown> | null;
 }
 
 export interface FlowEditorState {
@@ -35,8 +33,6 @@ export class FlowEditorService {
         return {
             id,
             configured: null,
-            initialComponentId: null,
-            initialConfiguration: null,
         };
     }
 
@@ -68,8 +64,6 @@ export class FlowEditorService {
                 componentId: service.componentId,
                 configuration: service.configuration,
             },
-            initialComponentId: service.componentId,
-            initialConfiguration: service.configuration,
         }));
 
         return {
