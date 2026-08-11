@@ -26,7 +26,7 @@ export class FlowComponentConfiguratorComponent {
     readonly componentSelected = output<ComponentDefinitionDto>();
 
     readonly componentConfigured = output<{
-        component: ComponentDefinitionDto;
+        componentId: string;
         configuration: Record<string, unknown>;
     }>();
 
@@ -88,7 +88,7 @@ export class FlowComponentConfiguratorComponent {
             this.configurationValue.set(initialConfiguration);
 
             this.componentConfigured.emit({
-                component,
+                componentId: component.id,
                 configuration:
                     initialConfiguration ?? {},
             });
@@ -114,7 +114,7 @@ export class FlowComponentConfiguratorComponent {
         }
 
         this.componentConfigured.emit({
-            component: selectedComponent,
+            componentId: selectedComponent.id,
             configuration,
         });
     }

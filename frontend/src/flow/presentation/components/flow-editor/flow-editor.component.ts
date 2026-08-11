@@ -16,29 +16,11 @@ import { MatInputModule } from '@angular/material/input';
 import { FlowComponentConfiguratorComponent } from '../flow-component-configurator/flow-component-configurator.component';
 
 import { ComponentDefinitionFacade } from '../../../../component-definition/aplication/component-definition.facade';
-import { ComponentDefinitionDto } from '../../../../component-definition/dto/component-definition.dto';
 import { FlowFacade } from '../../../aplication/flow.facade';
-import { FlowComponentDto } from '../../../dto/flow-component.dto';
-import { FlowDto } from '../../../dto/flow.dto';
+import { FlowEditorService, ConfiguredComponent, FlowEditorState, ServiceSlot } from '../../../aplication/flow-editor.service';
 import { FlowResponseDto } from '../../../dto/flow-response.dto';
 import { FlowComponentRole } from '../../../../shared/types/flow-component-role';
 import { getHttpErrorMessage } from '../../../../shared/utils/http-error.util';
-
-interface ConfiguredComponent {
-    component: ComponentDefinitionDto;
-    configuration: Record<string, unknown>;
-}
-
-interface RequiredConfiguredComponents {
-    consumer: ConfiguredComponent | null;
-    producer: ConfiguredComponent | null;
-}
-
-interface ServiceSlot {
-    id: number;
-    initialComponentId: string | null;
-    initialConfiguration: Record<string, unknown> | null;
-}
 
 export interface FlowEditorDialogData {
     flow?: FlowResponseDto;
@@ -62,6 +44,7 @@ export class FlowEditorComponent implements OnInit {
     private readonly componentDefinitionFacade =
         inject(ComponentDefinitionFacade);
     private readonly flowFacade = inject(FlowFacade);
+    private readonly flowEditorService = inject(FlowEditorService);
     private readonly dialogRef =
         inject(MatDialogRef<FlowEditorComponent>);
     private readonly dialogData =
@@ -86,13 +69,13 @@ export class FlowEditorComponent implements OnInit {
         }),
     });
 
-    readonly configured = signal<RequiredConfiguredComponents>({
+    readonly state = signal<FlowEditorState>({
         consumer: null,
+        services: [],
         producer: null,
     });
 
-    readonly configuredServices = signal<Record<number, ConfiguredComponent | null>>({});
-    readonly serviceSlots = signal<ServiceSlot[]>([]);
+    readonly serviceSlots = computed(() => this.state().services);
     private nextServiceSlotId = 1;
 
     readonly editingFlow = this.dialogData?.flow ?? null;
@@ -111,18 +94,14 @@ export class FlowEditorComponent implements OnInit {
                 name: this.editingFlow.name,
             });
 
-            const services = this.editingFlow.components
-                .filter((component) => component.role === 'service')
-                .sort((a, b) => a.position - b.position);
+            const initialState = this.flowEditorService.buildInitialState(
+                this.editingFlow,
+                this.nextServiceSlotId,
+            );
 
-            if (services.length > 0) {
-                const slots = services.map((service) => ({
-                    id: this.nextServiceSlotId++,
-                    initialComponentId: service.componentId,
-                    initialConfiguration: service.configuration,
-                }));
-
-                this.serviceSlots.set(slots);
+            if (initialState.services.length > 0) {
+                this.nextServiceSlotId += initialState.services.length;
+                this.state.set(initialState);
                 return;
             }
         }
@@ -134,7 +113,7 @@ export class FlowEditorComponent implements OnInit {
         role: FlowComponentRole,
         configuredComponent: ConfiguredComponent,
     ): void {
-        this.configured.update((state) => ({
+        this.state.update((state) => ({
             ...state,
             [role]: configuredComponent,
         }));
@@ -144,34 +123,35 @@ export class FlowEditorComponent implements OnInit {
         slotId: number,
         configuredComponent: ConfiguredComponent,
     ): void {
-        this.configuredServices.update((state) => ({
+        this.state.update((state) => ({
             ...state,
-            [slotId]: configuredComponent,
+            services: state.services.map((slot) => (
+                slot.id === slotId
+                    ? { ...slot, configured: configuredComponent }
+                    : slot
+            )),
         }));
     }
 
     addServiceSlot(): void {
-        const slot: ServiceSlot = {
-            id: this.nextServiceSlotId++,
-            initialComponentId: null,
-            initialConfiguration: null,
-        };
+        const slot = this.flowEditorService.createServiceSlot(
+            this.nextServiceSlotId++,
+        );
 
-        this.serviceSlots.update((slots) => [
-            ...slots,
-            slot,
-        ]);
+        this.state.update((state) => ({
+            ...state,
+            services: [
+                ...state.services,
+                slot,
+            ],
+        }));
     }
 
     removeServiceSlot(slotId: number): void {
-        this.serviceSlots.update((slots) => slots
-            .filter((slot) => slot.id !== slotId));
-
-        this.configuredServices.update((state) => {
-            const nextState = { ...state };
-            delete nextState[slotId];
-            return nextState;
-        });
+        this.state.update((state) => ({
+            ...state,
+            services: state.services.filter((slot) => slot.id !== slotId),
+        }));
     }
 
     trackByServiceSlotId(_: number, slot: ServiceSlot): number {
@@ -200,12 +180,13 @@ export class FlowEditorComponent implements OnInit {
             return;
         }
 
-        const payload = this.buildPayload();
+        const { payload, errorMessage } = this.flowEditorService.buildPayload(
+            this.flowForm.controls.name.value,
+            this.state(),
+        );
 
         if (!payload) {
-            this.errorMessage.set(
-                'Select one consumer and one producer before saving the flow.',
-            );
+            this.errorMessage.set(errorMessage);
             return;
         }
 
@@ -232,53 +213,9 @@ export class FlowEditorComponent implements OnInit {
         }
     }
 
-    private buildPayload(): FlowDto | null {
-        const configured = this.configured();
-        const consumer = configured.consumer;
-        const producer = configured.producer;
-        const configuredServices = this.configuredServices();
-        const serviceComponents = this.serviceSlots()
-            .map((slot) => configuredServices[slot.id] ?? null)
-            .filter((service): service is ConfiguredComponent => !!service);
-
-        if (!consumer || !producer) {
-            return null;
-        }
-
-        const components: FlowComponentDto[] = [
-            {
-                role: 'consumer',
-                componentId: consumer.component.id,
-                position: 0,
-                configuration: consumer.configuration,
-            },
-        ];
-
-        for (const [index, service] of serviceComponents.entries()) {
-            components.push({
-                role: 'service',
-                componentId: service.component.id,
-                position: index + 1,
-                configuration: service.configuration,
-            });
-        }
-
-        components.push({
-            role: 'producer',
-            componentId: producer.component.id,
-            position: components.length,
-            configuration: producer.configuration,
-        });
-
-        return {
-            name: this.flowForm.controls.name.value.trim(),
-            components,
-        };
-    }
-
     private initialComponentFor(
         role: FlowComponentRole,
-    ): FlowComponentDto | undefined {
+    ) {
         return this.editingFlow?.components
             .find((component) => component.role === role);
     }
