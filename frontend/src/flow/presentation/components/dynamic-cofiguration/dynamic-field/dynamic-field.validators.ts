@@ -49,11 +49,11 @@ export function resolveSequenceErrorMessage(
     field: DynamicField,
 ): string {
     if (array.hasError('minlength')) {
-        return `Add at least ${field.minItems} item(s)`;
+        return `Add at least ${field.appinfo?.minItems} item(s)`;
     }
 
     if (array.hasError('maxlength')) {
-        return `Maximum ${field.maxItems} item(s) allowed`;
+        return `Maximum ${field.appinfo?.maxItems} item(s) allowed`;
     }
 
     return 'Invalid sequence';
@@ -81,7 +81,7 @@ function cronValidator(): ValidatorFn {
 
 function enumerationValidator(field: DynamicField): ValidatorFn {
     const allowedValues = new Set(
-        (field.enumeration ?? []).map((option) => option.value),
+        (field.appinfo?.enumeration ?? []).map((option) => option.value),
     );
 
     return (control: AbstractControl): ValidationErrors | null => {

@@ -4,20 +4,18 @@ export interface DynamicField {
     use: 'required' | 'optional';
     description?: string;
     order: number;
-    defaultValue?: string | boolean;
-    sequence?: boolean;
-    minItems?: number;
-    maxItems?: number;
-    sequenceTemplateFields?: DynamicField[];
-
     appinfo?: {
         fieldType?: string;
         label?: string;
+        defaultValue?: string | boolean;
+        sequence?: boolean;
+        sequenceTemplateFields?: DynamicField[];
+        minItems?: number;
+        maxItems?: number;
         dynamic?: boolean;
         advanced?: boolean;
+        enumeration?: Array<{
+            value: string;
+        }>;
     };
-
-    enumeration?: Array<{
-        value: string;
-    }>;
 }

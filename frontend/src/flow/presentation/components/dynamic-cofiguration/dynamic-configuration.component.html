@@ -1,6 +1,6 @@
 <form [formGroup]="form()">
   @for (field of fields(); track field.name) {
-    @if (field.sequence) {
+    @if (field.appinfo?.sequence) {
       <div class="sequence-field">
         <div class="sequence-field__header">
           <strong>{{ getFieldLabel(field) }}</strong>
@@ -13,9 +13,9 @@
         <div class="sequence-field__items" [formArrayName]="field.name">
           @for (item of getSequenceControls(field); track $index) {
             <div class="sequence-item" [formGroupName]="$index">
-              @if ((field.sequenceTemplateFields?.length ?? 0) > 0) {
+              @if ((field.appinfo?.sequenceTemplateFields?.length ?? 0) > 0) {
                 @for (
-                  templateField of field.sequenceTemplateFields ?? [];
+                  templateField of field.appinfo?.sequenceTemplateFields ?? [];
                   track templateField.name
                 ) {
                   @if (isBooleanField(templateField)) {
@@ -33,7 +33,7 @@
                       @if (isSelectField(templateField)) {
                         <mat-select [formControlName]="templateField.name">
                           @for (
-                            option of templateField.enumeration ?? [];
+                            option of templateField.appinfo?.enumeration ?? [];
                             track option.value
                           ) {
                             <mat-option [value]="option.value">
@@ -107,7 +107,10 @@
 
         @if (isSelectField(field)) {
           <mat-select [formControlName]="field.name">
-            @for (option of field.enumeration ?? []; track option.value) {
+            @for (
+              option of field.appinfo?.enumeration ?? [];
+              track option.value
+            ) {
               <mat-option [value]="option.value">
                 {{ option.value }}
               </mat-option>

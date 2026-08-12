@@ -17,11 +17,6 @@ export function mapDynamicField(name: string, value: unknown): DynamicField {
             typeof field['order'] === 'number'
                 ? field['order']
                 : 0,
-        defaultValue: resolveDefaultValue(field, appinfo),
-        sequence,
-        minItems: parseMinItems(appinfo),
-        maxItems: parseMaxItems(appinfo),
-        sequenceTemplateFields: mapSequenceTemplate(appinfo),
         appinfo: appinfo
             ? {
                 fieldType:
@@ -32,6 +27,11 @@ export function mapDynamicField(name: string, value: unknown): DynamicField {
                     typeof appinfo['label'] === 'string'
                         ? appinfo['label']
                         : undefined,
+                defaultValue: resolveDefaultValue(field, appinfo),
+                sequence,
+                sequenceTemplateFields: mapSequenceTemplate(appinfo),
+                minItems: parseMinItems(appinfo),
+                maxItems: parseMaxItems(appinfo),
                 dynamic:
                     typeof appinfo['dynamic'] === 'boolean'
                         ? appinfo['dynamic']
@@ -40,14 +40,12 @@ export function mapDynamicField(name: string, value: unknown): DynamicField {
                     typeof appinfo['advanced'] === 'boolean'
                         ? appinfo['advanced']
                         : undefined,
+                enumeration:
+                    Array.isArray(appinfo['enumeration'])
+                        ? appinfo['enumeration'] as Array<{ value: string }>
+                        : undefined,
             }
             : undefined,
-        enumeration:
-            Array.isArray(appinfo?.['enumeration'])
-                ? appinfo['enumeration'] as Array<{ value: string }>
-                : Array.isArray(field['enumeration'])
-                    ? field['enumeration'] as Array<{ value: string }>
-                    : undefined,
     };
 }
 
@@ -108,7 +106,7 @@ function resolveDefaultValue(
                 ? field['type']
                 : undefined;
 
-    const rawDefault = field['defaultValue'] ?? appinfo?.['defaultValue'];
+    const rawDefault = appinfo?.['defaultValue'];
 
     if (fieldType === 'boolean') {
         if (typeof rawDefault === 'boolean') {

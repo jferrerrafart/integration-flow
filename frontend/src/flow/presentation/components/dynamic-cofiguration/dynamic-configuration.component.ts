@@ -63,7 +63,7 @@ export class DynamicConfigurationComponent {
         const group: Record<string, AbstractControl> = {};
 
         for (const field of this.fields()) {
-            if (field.sequence) {
+            if (field.appinfo?.sequence) {
                 group[field.name] = this.createSequenceArray(field);
                 continue;
             }
@@ -111,7 +111,7 @@ export class DynamicConfigurationComponent {
     }
 
     addSequenceItem(field: DynamicField): void {
-        if (!field.sequence || !this.canAddSequenceItem(field)) {
+        if (!field.appinfo?.sequence || !this.canAddSequenceItem(field)) {
             return;
         }
 
@@ -124,7 +124,7 @@ export class DynamicConfigurationComponent {
         field: DynamicField,
         index: number,
     ): void {
-        if (!field.sequence || !this.canRemoveSequenceItem(field)) {
+        if (!field.appinfo?.sequence || !this.canRemoveSequenceItem(field)) {
             return;
         }
 
@@ -132,7 +132,7 @@ export class DynamicConfigurationComponent {
     }
 
     getSequenceControls(field: DynamicField): FormGroup[] {
-        if (!field.sequence) {
+        if (!field.appinfo?.sequence) {
             return [];
         }
 
@@ -141,23 +141,23 @@ export class DynamicConfigurationComponent {
     }
 
     canAddSequenceItem(field: DynamicField): boolean {
-        if (!field.sequence) {
+        if (!field.appinfo?.sequence) {
             return false;
         }
 
-        if (field.maxItems === undefined) {
+        if (field.appinfo?.maxItems === undefined) {
             return true;
         }
 
-        return this.getSequenceArray(field).length < field.maxItems;
+        return this.getSequenceArray(field).length < field.appinfo.maxItems;
     }
 
     canRemoveSequenceItem(field: DynamicField): boolean {
-        if (!field.sequence) {
+        if (!field.appinfo?.sequence) {
             return false;
         }
 
-        const minItems = field.minItems ?? 0;
+        const minItems = field.appinfo?.minItems ?? 0;
 
         return this.getSequenceArray(field).length > minItems;
     }
@@ -223,11 +223,11 @@ export class DynamicConfigurationComponent {
         }
 
         if (array.hasError('minlength')) {
-            return `Add at least ${field.minItems} item(s)`;
+            return `Add at least ${field.appinfo?.minItems} item(s)`;
         }
 
         if (array.hasError('maxlength')) {
-            return `Maximum ${field.maxItems} item(s) allowed`;
+            return `Maximum ${field.appinfo?.maxItems} item(s) allowed`;
         }
 
         return resolveSequenceErrorMessage(array, field);
@@ -241,7 +241,7 @@ export class DynamicConfigurationComponent {
         field: DynamicField,
     ): FormControl {
         return new FormControl(
-            field.defaultValue ?? null,
+            field.appinfo?.defaultValue ?? null,
             buildFieldValidators(field),
         );
     }
@@ -250,7 +250,7 @@ export class DynamicConfigurationComponent {
         field: DynamicField,
     ): FormArray<FormGroup> {
         const items: FormGroup[] = [];
-        const minItems = field.minItems ?? 0;
+        const minItems = field.appinfo?.minItems ?? 0;
         const validators: ValidatorFn[] = [];
 
         for (let index = 0; index < minItems; index += 1) {
@@ -261,8 +261,8 @@ export class DynamicConfigurationComponent {
             validators.push(Validators.minLength(minItems));
         }
 
-        if (field.maxItems !== undefined) {
-            validators.push(Validators.maxLength(field.maxItems));
+        if (field.appinfo?.maxItems !== undefined) {
+            validators.push(Validators.maxLength(field.appinfo.maxItems));
         }
 
         return new FormArray(items, validators);
@@ -272,7 +272,7 @@ export class DynamicConfigurationComponent {
         field: DynamicField,
     ): FormGroup {
         const templateFields =
-            field.sequenceTemplateFields ?? [];
+            field.appinfo?.sequenceTemplateFields ?? [];
         const controls: Record<string, AbstractControl> = {};
 
         if (templateFields.length === 0) {
