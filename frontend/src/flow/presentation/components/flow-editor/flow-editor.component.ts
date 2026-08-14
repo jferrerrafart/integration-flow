@@ -13,6 +13,7 @@ import {
 } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { FlowComponentConfiguratorComponent } from '../flow-component-configurator/flow-component-configurator.component';
 
 import { ComponentDefinitionFacade } from '../../../../component-definition/aplication/component-definition.facade';
@@ -47,6 +48,7 @@ export class FlowEditorComponent implements OnInit {
     private readonly flowEditorService = inject(FlowEditorService);
     private readonly dialogRef =
         inject(MatDialogRef<FlowEditorComponent>);
+    private readonly snackBar = inject(MatSnackBar);
     private readonly dialogData =
         inject<FlowEditorDialogData>(MAT_DIALOG_DATA, {
             optional: true,
@@ -60,7 +62,6 @@ export class FlowEditorComponent implements OnInit {
         this.componentDefinitionFacade.getComponentsByRole('producer'));
 
     readonly loading = signal(false);
-    readonly errorMessage = signal<string | null>(null);
 
     readonly flowForm = new FormGroup({
         name: new FormControl('', {
@@ -176,6 +177,7 @@ export class FlowEditorComponent implements OnInit {
     async createFlow(): Promise<void> {
         if (this.flowForm.invalid) {
             this.flowForm.markAllAsTouched();
+            this.showMessage('Flow name is required.');
             return;
         }
 
@@ -185,12 +187,11 @@ export class FlowEditorComponent implements OnInit {
         );
 
         if (!payload) {
-            this.errorMessage.set(errorMessage);
+            this.showMessage(errorMessage);
             return;
         }
 
         this.loading.set(true);
-        this.errorMessage.set(null);
 
         try {
             if (this.editingFlow) {
@@ -199,9 +200,14 @@ export class FlowEditorComponent implements OnInit {
                 await this.flowFacade.create(payload);
             }
 
+            this.showMessage(
+                this.editingFlow
+                    ? 'Flow updated successfully.'
+                    : 'Flow created successfully.',
+            );
             this.dialogRef.close(true);
         } catch (error: unknown) {
-            this.errorMessage.set(
+            this.showMessage(
                 getHttpErrorMessage(
                     error,
                     'Unable to save flow. Check the data and retry.',
@@ -232,5 +238,15 @@ export class FlowEditorComponent implements OnInit {
                 error,
             );
         }
+    }
+
+    private showMessage(message: string | null): void {
+        if (!message) {
+            return;
+        }
+
+        this.snackBar.open(message, 'Close', {
+            duration: 5000,
+        });
     }
 }

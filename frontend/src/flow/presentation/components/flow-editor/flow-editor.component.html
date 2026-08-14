@@ -1,6 +1,12 @@
 <h2 mat-dialog-title>{{ dialogTitle }}</h2>
 
 <mat-dialog-content class="flow-editor">
+  @if (!editingFlow) {
+    <p class="flow-editor__hint">
+      To create a new Flow you must select one Consumer and one Producer
+    </p>
+  }
+
   <form [formGroup]="flowForm" class="flow-editor__name">
     <mat-form-field appearance="outline">
       <mat-label>Flow Name</mat-label>
@@ -75,10 +81,6 @@
       (componentConfigured)="onComponentConfigured('producer', $event)"
     />
   </section>
-
-  @if (errorMessage(); as errorMessage) {
-    <p class="flow-editor__error">{{ errorMessage }}</p>
-  }
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
