@@ -1,6 +1,7 @@
 <app-component-selector
   [label]="role()"
   [components]="components()"
+  [selected]="selectedComponent()"
   (componentSelected)="onComponentSelected($event)"
 />
 

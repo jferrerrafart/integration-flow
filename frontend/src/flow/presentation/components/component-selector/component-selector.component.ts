@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, linkedSignal, output } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 
@@ -19,7 +19,9 @@ export class ComponentSelectorComponent {
 
     readonly components = input.required<ComponentDefinitionDto[]>();
 
-    readonly selectedComponent = signal<ComponentDefinitionDto | null>(null);
+    readonly selected = input<ComponentDefinitionDto | null>(null);
+
+    readonly selectedComponent = linkedSignal(() => this.selected());
 
     readonly componentSelected = output<ComponentDefinitionDto>();
 
