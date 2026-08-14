@@ -15,13 +15,11 @@ export function buildFieldValidators(field: DynamicField): ValidatorFn[] {
         validators.push(Validators.required);
     }
 
-    const fieldType = field.appinfo?.fieldType ?? field.type;
-
-    if (fieldType === 'cron') {
+    if (field.appinfo?.fieldType === 'cron') {
         validators.push(cronValidator());
     }
 
-    if (fieldType === 'enumeration' || fieldType === 'textenumeration') {
+    if (field.appinfo?.enumeration) {
         validators.push(enumerationValidator(field));
     }
 

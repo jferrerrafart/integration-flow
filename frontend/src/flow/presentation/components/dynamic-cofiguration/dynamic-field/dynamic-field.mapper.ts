@@ -7,7 +7,6 @@ export function mapDynamicField(name: string, value: unknown): DynamicField {
 
     return {
         name,
-        type: String(field['type'] ?? ''),
         use: field['use'] === 'required' ? 'required' : 'optional',
         description:
             typeof field['description'] === 'string'
@@ -27,19 +26,11 @@ export function mapDynamicField(name: string, value: unknown): DynamicField {
                     typeof appinfo['label'] === 'string'
                         ? appinfo['label']
                         : undefined,
-                defaultValue: resolveDefaultValue(field, appinfo),
+                defaultValue: resolveDefaultValue(appinfo),
                 sequence,
                 sequenceTemplateFields: mapSequenceTemplate(appinfo),
                 minItems: parseMinItems(appinfo),
                 maxItems: parseMaxItems(appinfo),
-                dynamic:
-                    typeof appinfo['dynamic'] === 'boolean'
-                        ? appinfo['dynamic']
-                        : undefined,
-                advanced:
-                    typeof appinfo['advanced'] === 'boolean'
-                        ? appinfo['advanced']
-                        : undefined,
                 enumeration:
                     Array.isArray(appinfo['enumeration'])
                         ? appinfo['enumeration'] as Array<{ value: string }>
@@ -50,29 +41,13 @@ export function mapDynamicField(name: string, value: unknown): DynamicField {
 }
 
 function parseMinItems(appinfo?: Record<string, unknown>): number {
-    const rawMin = appinfo?.['min'];
-
-    if (typeof rawMin !== 'string') {
-        return 0;
-    }
-
-    const parsed = Number(rawMin);
+    const parsed = Number(appinfo?.['min']);
 
     return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function parseMaxItems(appinfo?: Record<string, unknown>): number | undefined {
-    const rawMax = appinfo?.['max'];
-
-    if (typeof rawMax !== 'string') {
-        return undefined;
-    }
-
-    if (rawMax === 'unbounded') {
-        return undefined;
-    }
-
-    const parsed = Number(rawMax);
+    const parsed = Number(appinfo?.['max']);
 
     return Number.isFinite(parsed) ? parsed : undefined;
 }
@@ -96,28 +71,18 @@ function mapSequenceTemplate(appinfo?: Record<string, unknown>): DynamicField[] 
 }
 
 function resolveDefaultValue(
-    field: Record<string, unknown>,
     appinfo?: Record<string, unknown>,
 ): string | boolean | undefined {
-    const fieldType =
-        typeof appinfo?.['fieldType'] === 'string'
-            ? appinfo['fieldType']
-            : typeof field['type'] === 'string'
-                ? field['type']
-                : undefined;
-
     const rawDefault = appinfo?.['defaultValue'];
 
-    if (fieldType === 'boolean') {
+    if (appinfo?.['fieldType'] === 'boolean') {
         if (typeof rawDefault === 'boolean') {
             return rawDefault;
         }
 
-        if (typeof rawDefault === 'string') {
-            return rawDefault.toLowerCase() === 'true';
-        }
-
-        return undefined;
+        return typeof rawDefault === 'string'
+            ? rawDefault.toLowerCase() === 'true'
+            : undefined;
     }
 
     return typeof rawDefault === 'string' ? rawDefault : undefined;

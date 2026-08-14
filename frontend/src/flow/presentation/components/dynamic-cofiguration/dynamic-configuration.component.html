@@ -18,43 +18,47 @@
                   templateField of field.appinfo?.sequenceTemplateFields ?? [];
                   track templateField.name
                 ) {
-                  @if (isBooleanField(templateField)) {
-                    <div class="boolean-field">
-                      <mat-checkbox [formControlName]="templateField.name">
-                        {{ getFieldLabel(templateField) }}
-                      </mat-checkbox>
-                    </div>
-                  } @else {
-                    <mat-form-field appearance="outline">
-                      <mat-label>
-                        {{ getFieldLabel(templateField) }}
-                      </mat-label>
+                  @switch (getEditorType(templateField)) {
+                    @case ("checkbox") {
+                      <div class="boolean-field">
+                        <mat-checkbox [formControlName]="templateField.name">
+                          {{ getFieldLabel(templateField) }}
+                        </mat-checkbox>
+                      </div>
+                    }
+                    @default {
+                      <mat-form-field appearance="outline">
+                        <mat-label>
+                          {{ getFieldLabel(templateField) }}
+                        </mat-label>
 
-                      @if (isSelectField(templateField)) {
-                        <mat-select [formControlName]="templateField.name">
-                          @for (
-                            option of templateField.appinfo?.enumeration ?? [];
-                            track option.value
-                          ) {
-                            <mat-option [value]="option.value">
-                              {{ option.value }}
-                            </mat-option>
-                          }
-                        </mat-select>
-                      } @else {
-                        <input
-                          matInput
-                          [formControlName]="templateField.name"
-                        />
-                      }
+                        @if (getEditorType(templateField) === "select") {
+                          <mat-select [formControlName]="templateField.name">
+                            @for (
+                              option of templateField.appinfo?.enumeration ??
+                                [];
+                              track option.value
+                            ) {
+                              <mat-option [value]="option.value">
+                                {{ option.value }}
+                              </mat-option>
+                            }
+                          </mat-select>
+                        } @else {
+                          <input
+                            matInput
+                            [formControlName]="templateField.name"
+                          />
+                        }
 
-                      @if (
-                        getFieldErrorMessage(templateField, item);
-                        as errorMessage
-                      ) {
-                        <mat-error>{{ errorMessage }}</mat-error>
-                      }
-                    </mat-form-field>
+                        @if (
+                          getFieldErrorMessage(templateField, item);
+                          as errorMessage
+                        ) {
+                          <mat-error>{{ errorMessage }}</mat-error>
+                        }
+                      </mat-form-field>
+                    }
                   }
                 }
               } @else {
@@ -89,7 +93,7 @@
           Add {{ getFieldLabel(field) }}
         </button>
       </div>
-    } @else if (isBooleanField(field)) {
+    } @else if (getEditorType(field) === "checkbox") {
       <div class="boolean-field">
         <mat-checkbox [formControlName]="field.name">
           {{ getFieldLabel(field) }}
@@ -105,7 +109,7 @@
           {{ getFieldLabel(field) }}
         </mat-label>
 
-        @if (isSelectField(field)) {
+        @if (getEditorType(field) === "select") {
           <mat-select [formControlName]="field.name">
             @for (
               option of field.appinfo?.enumeration ?? [];

@@ -22,7 +22,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
 import { ComponentDefinitionConfigurationDto } from '../../../../component-definition/dto/component-definition-configuration.dto';
-import { DynamicField } from './dynamic-field/dynamic-field.model';
+import { DynamicField, EditorType, resolveEditorType } from './dynamic-field/dynamic-field.model';
 import { mapDynamicField } from './dynamic-field/dynamic-field.mapper';
 import {
     buildFieldValidators,
@@ -162,15 +162,8 @@ export class DynamicConfigurationComponent {
         return this.getSequenceArray(field).length > minItems;
     }
 
-    isBooleanField(field: DynamicField): boolean {
-        return (field.appinfo?.fieldType ?? field.type) === 'boolean';
-    }
-
-    isSelectField(field: DynamicField): boolean {
-        const kind = field.appinfo?.fieldType ?? field.type;
-
-        return kind === 'enumeration'
-            || kind === 'textenumeration';
+    getEditorType(field: DynamicField): EditorType {
+        return resolveEditorType(field);
     }
 
     getFieldLabel(field: DynamicField): string {

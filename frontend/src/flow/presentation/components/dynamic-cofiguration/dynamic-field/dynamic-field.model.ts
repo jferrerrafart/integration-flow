@@ -1,6 +1,5 @@
 export interface DynamicField {
     name: string;
-    type: string;
     use: 'required' | 'optional';
     description?: string;
     order: number;
@@ -12,10 +11,26 @@ export interface DynamicField {
         sequenceTemplateFields?: DynamicField[];
         minItems?: number;
         maxItems?: number;
-        dynamic?: boolean;
-        advanced?: boolean;
         enumeration?: Array<{
             value: string;
         }>;
     };
+}
+
+export type EditorType = 'sequence' | 'select' | 'checkbox' | 'text';
+
+export function resolveEditorType(field: DynamicField): EditorType {
+    if (field.appinfo?.sequence) {
+        return 'sequence';
+    }
+
+    if (field.appinfo?.enumeration) {
+        return 'select';
+    }
+
+    if (field.appinfo?.fieldType === 'boolean') {
+        return 'checkbox';
+    }
+
+    return 'text';
 }
