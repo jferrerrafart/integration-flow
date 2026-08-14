@@ -34,3 +34,7 @@ export function resolveEditorType(field: DynamicField): EditorType {
 
     return 'text';
 }
+
+export function getFieldLabel(field: DynamicField): string {
+    return field.appinfo?.label || field.name;
+}

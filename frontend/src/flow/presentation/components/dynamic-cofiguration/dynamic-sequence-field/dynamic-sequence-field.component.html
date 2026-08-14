@@ -1,0 +1,85 @@
+<div class="sequence-field">
+  <div class="sequence-field__header">
+    <strong>{{ getFieldLabel(field()) }}</strong>
+
+    @if (field().description) {
+      <small>{{ field().description }}</small>
+    }
+  </div>
+
+  <div class="sequence-field__items">
+    @for (item of array().controls; track $index) {
+      <div class="sequence-item" [formGroup]="item">
+        @if (templateFields().length > 0) {
+          @for (templateField of templateFields(); track templateField.name) {
+            @switch (getEditorType(templateField)) {
+              @case ("checkbox") {
+                <div class="boolean-field">
+                  <mat-checkbox [formControlName]="templateField.name">
+                    {{ getFieldLabel(templateField) }}
+                  </mat-checkbox>
+                </div>
+              }
+              @default {
+                <mat-form-field appearance="outline">
+                  <mat-label>
+                    {{ getFieldLabel(templateField) }}
+                  </mat-label>
+
+                  @if (getEditorType(templateField) === "select") {
+                    <mat-select [formControlName]="templateField.name">
+                      @for (
+                        option of templateField.appinfo?.enumeration ?? [];
+                        track option.value
+                      ) {
+                        <mat-option [value]="option.value">
+                          {{ option.value }}
+                        </mat-option>
+                      }
+                    </mat-select>
+                  } @else {
+                    <input matInput [formControlName]="templateField.name" />
+                  }
+
+                  @if (
+                    getFieldErrorMessage(item, templateField);
+                    as errorMessage
+                  ) {
+                    <mat-error>{{ errorMessage }}</mat-error>
+                  }
+                </mat-form-field>
+              }
+            }
+          }
+        } @else {
+          <mat-form-field appearance="outline">
+            <mat-label>Value</mat-label>
+            <input matInput formControlName="value" />
+          </mat-form-field>
+        }
+
+        <button
+          type="button"
+          class="sequence-item__remove"
+          [disabled]="!canRemoveItem()"
+          (click)="removeItem($index)"
+        >
+          Remove
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (sequenceErrorMessage(); as sequenceError) {
+    <p class="sequence-field__error">{{ sequenceError }}</p>
+  }
+
+  <button
+    type="button"
+    class="sequence-field__add"
+    [disabled]="!canAddItem()"
+    (click)="addItem()"
+  >
+    Add {{ getFieldLabel(field()) }}
+  </button>
+</div>

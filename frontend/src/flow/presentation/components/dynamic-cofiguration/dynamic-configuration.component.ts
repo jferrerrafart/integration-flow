@@ -1,20 +1,6 @@
-import {
-    Component,
-    computed,
-    effect,
-    input,
-    output,
-} from '@angular/core';
+import { Component, computed, effect, input, output, } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import {
-    AbstractControl,
-    FormArray,
-    FormControl,
-    FormGroup,
-    ReactiveFormsModule,
-    ValidatorFn,
-    Validators,
-} from '@angular/forms';
+import { AbstractControl, FormArray, FormGroup, ReactiveFormsModule, } from '@angular/forms';
 import { switchMap } from 'rxjs';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -22,13 +8,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
 import { ComponentDefinitionConfigurationDto } from '../../../../component-definition/dto/component-definition-configuration.dto';
-import { DynamicField, EditorType, resolveEditorType } from './dynamic-field/dynamic-field.model';
+import { DynamicField, EditorType, getFieldLabel, resolveEditorType } from './dynamic-field/dynamic-field.model';
 import { mapDynamicField } from './dynamic-field/dynamic-field.mapper';
-import {
-    buildFieldValidators,
-    resolveFieldErrorMessage,
-    resolveSequenceErrorMessage,
-} from './dynamic-field/dynamic-field.validators';
+import { createScalarControl, createSequenceArray } from './dynamic-field/dynamic-field.factory';
+import { fieldHasError, getFieldErrorMessage } from './dynamic-field/dynamic-field.control-utils';
+import { DynamicSequenceFieldComponent } from './dynamic-sequence-field/dynamic-sequence-field.component';
 
 @Component({
     selector: 'app-dynamic-configuration',
@@ -39,6 +23,7 @@ import {
         MatFormFieldModule,
         MatInputModule,
         MatSelectModule,
+        DynamicSequenceFieldComponent,
     ],
     templateUrl: './dynamic-configuration.component.html',
     styleUrl: './dynamic-configuration.component.scss',
@@ -63,12 +48,9 @@ export class DynamicConfigurationComponent {
         const group: Record<string, AbstractControl> = {};
 
         for (const field of this.fields()) {
-            if (field.appinfo?.sequence) {
-                group[field.name] = this.createSequenceArray(field);
-                continue;
-            }
-
-            group[field.name] = this.createScalarControl(field);
+            group[field.name] = field.appinfo?.sequence
+                ? createSequenceArray(field)
+                : createScalarControl(field);
         }
 
         return new FormGroup(group);
@@ -110,190 +92,22 @@ export class DynamicConfigurationComponent {
         });
     }
 
-    addSequenceItem(field: DynamicField): void {
-        if (!field.appinfo?.sequence || !this.canAddSequenceItem(field)) {
-            return;
-        }
-
-        this.getSequenceArray(field).push(
-            this.createSequenceItemGroup(field),
-        );
-    }
-
-    removeSequenceItem(
-        field: DynamicField,
-        index: number,
-    ): void {
-        if (!field.appinfo?.sequence || !this.canRemoveSequenceItem(field)) {
-            return;
-        }
-
-        this.getSequenceArray(field).removeAt(index);
-    }
-
-    getSequenceControls(field: DynamicField): FormGroup[] {
-        if (!field.appinfo?.sequence) {
-            return [];
-        }
-
-        return this.getSequenceArray(field)
-            .controls as FormGroup[];
-    }
-
-    canAddSequenceItem(field: DynamicField): boolean {
-        if (!field.appinfo?.sequence) {
-            return false;
-        }
-
-        if (field.appinfo?.maxItems === undefined) {
-            return true;
-        }
-
-        return this.getSequenceArray(field).length < field.appinfo.maxItems;
-    }
-
-    canRemoveSequenceItem(field: DynamicField): boolean {
-        if (!field.appinfo?.sequence) {
-            return false;
-        }
-
-        const minItems = field.appinfo?.minItems ?? 0;
-
-        return this.getSequenceArray(field).length > minItems;
+    getSequenceArray(field: DynamicField): FormArray<FormGroup> {
+        return this.form().get(field.name) as FormArray<FormGroup>;
     }
 
     getEditorType(field: DynamicField): EditorType {
         return resolveEditorType(field);
     }
 
-    getFieldLabel(field: DynamicField): string {
-        return field.appinfo?.label || field.name;
+    getFieldLabel = getFieldLabel;
+
+    fieldHasError(field: DynamicField): boolean {
+        return fieldHasError(this.form(), field);
     }
 
-    fieldHasError(
-        field: DynamicField,
-        formGroup?: FormGroup,
-    ): boolean {
-        const control = this.getFieldControl(field, formGroup);
-
-        if (!control) {
-            return false;
-        }
-
-        return control.invalid
-            && (control.touched || control.dirty);
-    }
-
-    getFieldErrorMessage(
-        field: DynamicField,
-        formGroup?: FormGroup,
-    ): string | null {
-        const control = this.getFieldControl(field, formGroup);
-
-        if (!control || !this.fieldHasError(field, formGroup)) {
-            return null;
-        }
-
-        if (control.hasError('required')) {
-            return 'This field is required';
-        }
-
-        return resolveFieldErrorMessage(control);
-    }
-
-    sequenceHasError(field: DynamicField): boolean {
-        const array = this.getSequenceArray(field);
-
-        return array.invalid
-            && (array.touched || array.dirty);
-    }
-
-    getSequenceErrorMessage(field: DynamicField): string | null {
-        const array = this.getSequenceArray(field);
-
-        if (!this.sequenceHasError(field)) {
-            return null;
-        }
-
-        if (array.hasError('minlength')) {
-            return `Add at least ${field.appinfo?.minItems} item(s)`;
-        }
-
-        if (array.hasError('maxlength')) {
-            return `Maximum ${field.appinfo?.maxItems} item(s) allowed`;
-        }
-
-        return resolveSequenceErrorMessage(array, field);
-    }
-
-    trackByFieldName(_: number, field: DynamicField): string {
-        return field.name;
-    }
-
-    private createScalarControl(
-        field: DynamicField,
-    ): FormControl {
-        return new FormControl(
-            field.appinfo?.defaultValue ?? null,
-            buildFieldValidators(field),
-        );
-    }
-
-    private createSequenceArray(
-        field: DynamicField,
-    ): FormArray<FormGroup> {
-        const items: FormGroup[] = [];
-        const minItems = field.appinfo?.minItems ?? 0;
-        const validators: ValidatorFn[] = [];
-
-        for (let index = 0; index < minItems; index += 1) {
-            items.push(this.createSequenceItemGroup(field));
-        }
-
-        if (minItems > 0) {
-            validators.push(Validators.minLength(minItems));
-        }
-
-        if (field.appinfo?.maxItems !== undefined) {
-            validators.push(Validators.maxLength(field.appinfo.maxItems));
-        }
-
-        return new FormArray(items, validators);
-    }
-
-    private createSequenceItemGroup(
-        field: DynamicField,
-    ): FormGroup {
-        const templateFields =
-            field.appinfo?.sequenceTemplateFields ?? [];
-        const controls: Record<string, AbstractControl> = {};
-
-        if (templateFields.length === 0) {
-            controls['value'] = new FormControl('');
-            return new FormGroup(controls);
-        }
-
-        for (const templateField of templateFields) {
-            controls[templateField.name] =
-                this.createScalarControl(templateField);
-        }
-
-        return new FormGroup(controls);
-    }
-
-    private getSequenceArray(
-        field: DynamicField,
-    ): FormArray<FormGroup> {
-        return this.form().get(field.name) as FormArray<FormGroup>;
-    }
-
-    private getFieldControl(
-        field: DynamicField,
-        formGroup?: FormGroup,
-    ): AbstractControl | null {
-        const group = (formGroup ?? this.form()) as FormGroup;
-
-        return group.get(field.name);
+    getFieldErrorMessage(field: DynamicField): string | null {
+        return getFieldErrorMessage(this.form(), field);
     }
 
 }
