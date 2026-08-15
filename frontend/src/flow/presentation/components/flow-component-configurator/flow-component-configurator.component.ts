@@ -4,7 +4,7 @@ import { ComponentSelectorComponent } from '../component-selector/component-sele
 import { DynamicConfigurationComponent } from '../dynamic-cofiguration/dynamic-configuration.component';
 
 import { ComponentDefinitionDto } from '../../../../component-definition/dto/component-definition.dto';
-import { ComponentDefinitionConfigurationDto } from '../../../../component-definition/dto/component-definition-configuration.dto';
+import { ConfigurationDefinitionDto } from '../../../../component-definition/dto/configuration-definition.dto';
 import { ComponentDefinitionFacade } from '../../../../component-definition/aplication/component-definition.facade';
 import { ConfiguredComponent } from '../../../aplication/flow-editor.service';
 import { FlowComponentRole } from '../../../../shared/types/flow-component-role';
@@ -39,7 +39,7 @@ export class FlowComponentConfiguratorComponent {
     readonly selectedComponent = signal<ComponentDefinitionDto | null>(null);
 
     readonly configuration =
-        signal<ComponentDefinitionConfigurationDto | null>(null);
+        signal<ConfigurationDefinitionDto | null>(null);
 
     readonly initialFormValue =
         signal<Record<string, unknown> | null>(null);

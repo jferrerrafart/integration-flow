@@ -319,7 +319,7 @@ The supplied definition files currently available for dynamic configuration are:
 
 The catalogue contains more entries than the four locally available definition files. Those entries remain visible in the API catalogue but are marked unavailable by the backend and disabled by the frontend.
 
-The frontend loads component lists by role, fetches a selected configuration definition on demand, and maps the returned `configuration` metadata, including field type, label, default value, enumeration, requiredness, and sequence information, to Angular form controls. This keeps the editor driven by the supplied metadata rather than hard-coding the four component forms.
+The frontend loads component lists by role, keeps the selected component metadata in memory, fetches only its configuration definition on demand, and maps the returned `configuration` metadata, including field type, label, default value, enumeration, requiredness, and sequence information, to Angular form controls. This keeps the editor driven by the supplied metadata rather than hard-coding the four component forms.
 
 ## API
 
@@ -339,6 +339,18 @@ The frontend loads component lists by role, fetches a selected configuration def
 | ------ | ------------------------------------ | ------------------------------------------ |
 | `GET`  | `/component-definitions/:role`       | List metadata for a role                   |
 | `GET`  | `/component-definitions/:role/:type` | Get configuration metadata for a component |
+
+The configuration-definition endpoint returns only the configuration metadata because the selected component's basic metadata is already available from the role list:
+
+```json
+{
+  "configuration": {
+    "id": {},
+    "autostart": {},
+    "cron-expression": {}
+  }
+}
+```
 
 Example flow payload:
 

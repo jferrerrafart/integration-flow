@@ -7,7 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
-import { ComponentDefinitionConfigurationDto } from '../../../../component-definition/dto/component-definition-configuration.dto';
+import { ConfigurationDefinitionDto } from '../../../../component-definition/dto/configuration-definition.dto';
 import { DynamicField, EditorType, getFieldLabel, resolveEditorType } from './dynamic-field/dynamic-field.model';
 import { mapDynamicField } from './dynamic-field/dynamic-field.mapper';
 import { createScalarControl, createSequenceArray } from './dynamic-field/dynamic-field.factory';
@@ -30,7 +30,7 @@ import { DynamicSequenceFieldComponent } from './dynamic-sequence-field/dynamic-
 })
 export class DynamicConfigurationComponent {
     readonly configuration =
-        input.required<ComponentDefinitionConfigurationDto>();
+        input.required<ConfigurationDefinitionDto>();
 
     readonly initialValue = input<Record<string, unknown> | null>(null);
 

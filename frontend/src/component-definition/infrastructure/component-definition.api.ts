@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { FlowComponentRole } from '../../shared/types/flow-component-role';
 import { ComponentDefinitionDto } from '../dto/component-definition.dto';
-import { ComponentDefinitionConfigurationDto } from '../dto/component-definition-configuration.dto';
+import { ConfigurationDefinitionDto } from '../dto/configuration-definition.dto';
 
 
 @Injectable({
@@ -25,8 +25,8 @@ export class ComponentDefinitionApiService {
     getConfigurationDefinition(
         role: FlowComponentRole,
         type: string,
-    ): Observable<ComponentDefinitionConfigurationDto> {
-        return this.http.get<ComponentDefinitionConfigurationDto>(
+    ): Observable<ConfigurationDefinitionDto> {
+        return this.http.get<ConfigurationDefinitionDto>(
             `${this.baseUrl}/${role}/${type}`,
         );
     }

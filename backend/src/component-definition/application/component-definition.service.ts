@@ -4,7 +4,7 @@ import { join } from 'path';
 
 import { FlowComponentRole } from 'src/shared/enums/flow-component-role.enum';
 import { ComponentDefinitionDto } from '../dto/component-definition.dto';
-import { ComponentDefinitionConfigurationDto } from '../dto/component-definition-configuration.dto';
+import { ConfigurationDefinitionDto } from '../dto/configuration-definition.dto';
 
 interface ComponentDefinitionEntry {
     id: string;
@@ -39,10 +39,10 @@ export class ComponentDefinitionService {
         }));
     }
 
-    getOne(
+    private findComponent(
         role: FlowComponentRole,
         type: string,
-    ): ComponentDefinitionDto {
+    ): ComponentDefinitionEntry {
         const index = this.getIndex(role);
 
         const component = Object.values(index).find(
@@ -55,23 +55,16 @@ export class ComponentDefinitionService {
             );
         }
 
-        return {
-            id: component.id,
-            name: component.name,
-            description: component.description,
-            type: component.type,
-            role,
-            available: this.isAvailable(component.type),
-        };
+        return component;
     }
 
     getConfigurationDefinition(
         role: FlowComponentRole,
         type: string,
-    ): ComponentDefinitionConfigurationDto {
-        const component = this.getOne(role, type);
+    ): ConfigurationDefinitionDto {
+        const component = this.findComponent(role, type);
 
-        if (!component.available) {
+        if (!this.isAvailable(component.type)) {
             throw new NotFoundException(
                 `Definition file not available for type: ${type}`,
             );
@@ -80,7 +73,6 @@ export class ComponentDefinitionService {
         const filePath = this.getDefinitionPath(type);
 
         return {
-            ...component,
             configuration: JSON.parse(
                 readFileSync(filePath, 'utf-8'),
             ),
