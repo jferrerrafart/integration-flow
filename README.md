@@ -123,7 +123,7 @@ A flow payload has this shape:
 
 The source of truth is `backend/src/component-definition/infrastructure/data/challenge-library.json`.
 
-The backend reads the role-specific indexes (`consumer_index`, `services_index`, and `producer_index`) and exposes the component `id`, display name, description, type, role, and availability. Availability is calculated by checking whether a matching definition file named `<type>.json` exists beside the library file.
+The backend reads the role-specific indexes (`consumer_index`, `services_index`, and `producer_index`) and exposes the component `id`, display name, description, type, and availability. The role is represented by the request path. Availability is calculated by checking whether a matching definition file named `<type>.json` exists beside the library file.
 
 The included configuration definitions describe fields such as:
 

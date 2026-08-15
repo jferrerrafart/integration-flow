@@ -34,7 +34,6 @@ export class ComponentDefinitionService {
             name: component.name,
             description: component.description,
             type: component.type,
-            role,
             available: this.isAvailable(component.type),
         }));
     }
