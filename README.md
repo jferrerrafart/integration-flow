@@ -116,9 +116,7 @@ A flow payload has this shape:
 
 | Method | Endpoint                             | Purpose                                                |
 | ------ | ------------------------------------ | ------------------------------------------------------ |
-| `GET`  | `/component-definitions/consumers`   | List consumer metadata                                 |
-| `GET`  | `/component-definitions/services`    | List service metadata                                  |
-| `GET`  | `/component-definitions/producers`   | List producer metadata                                 |
+| `GET`  | `/component-definitions/:role`       | List metadata for a role                               |
 | `GET`  | `/component-definitions/:role/:type` | Retrieve configuration metadata for one component type |
 
 ## Component Definitions
@@ -310,7 +308,7 @@ Deleting a flow cascades to its components. Updating a flow replaces its existin
 
 The source of truth is `backend/src/component-definition/infrastructure/data/challenge-library.json`.
 
-The backend reads the role-specific indexes in that file (`consumer_index`, `services_index`, and `producer_index`) to expose component IDs, names, descriptions, types, and availability. It then checks for a matching definition file named `<type>.json` in the same data directory and returns that JSON as configuration metadata.
+The backend reads the role-specific indexes in that file (`consumer_index`, `services_index`, and `producer_index`) to expose component IDs, names, descriptions, types, and availability. It then checks for a matching definition file named `<type>.json` in the same data directory and returns that JSON as configuration metadata. The application names these operations `getComponentListByRole` and `getConfigurationDefinition` to distinguish catalog retrieval from configuration metadata retrieval.
 
 The supplied definition files currently available for dynamic configuration are:
 
@@ -321,7 +319,7 @@ The supplied definition files currently available for dynamic configuration are:
 
 The catalogue contains more entries than the four locally available definition files. Those entries remain visible in the API catalogue but are marked unavailable by the backend and disabled by the frontend.
 
-The frontend loads component lists by role, fetches a selected definition on demand, and maps metadata such as field type, label, default value, enumeration, requiredness, and sequence information to Angular form controls. This keeps the editor driven by the supplied metadata rather than hard-coding the four component forms.
+The frontend loads component lists by role, fetches a selected configuration definition on demand, and maps the returned `configuration` metadata, including field type, label, default value, enumeration, requiredness, and sequence information, to Angular form controls. This keeps the editor driven by the supplied metadata rather than hard-coding the four component forms.
 
 ## API
 
@@ -339,9 +337,7 @@ The frontend loads component lists by role, fetches a selected definition on dem
 
 | Method | Endpoint                             | Purpose                                    |
 | ------ | ------------------------------------ | ------------------------------------------ |
-| `GET`  | `/component-definitions/consumers`   | List consumer metadata                     |
-| `GET`  | `/component-definitions/services`    | List service metadata                      |
-| `GET`  | `/component-definitions/producers`   | List producer metadata                     |
+| `GET`  | `/component-definitions/:role`       | List metadata for a role                   |
 | `GET`  | `/component-definitions/:role/:type` | Get configuration metadata for a component |
 
 Example flow payload:
@@ -435,7 +431,7 @@ The repository includes starter controller and application tests, plus a flow co
 
 ## Simplified or Unfinished Areas
 
-- The backend does not yet validate that every submitted `componentId` belongs to the selected role or that its configuration matches the referenced definition.
+- The backend does not yet validate that every submitted `componentId` belongs to the selected role or that its configuration matches the referenced configuration metadata.
 - The backend does not independently validate configuration field requiredness; it stores the JSON submitted by the client.
 - The catalogue exposes many definitions that do not have local JSON files and are therefore unavailable for configuration.
 - Error handling is mainly surfaced through Angular snack bars and console logging; there is no centralized notification or logging strategy.

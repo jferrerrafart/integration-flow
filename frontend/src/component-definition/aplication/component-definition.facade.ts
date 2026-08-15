@@ -26,33 +26,33 @@ export class ComponentDefinitionFacade {
             producer: false,
         });
 
-    readonly definitionCache =
+    readonly configurationDefinitionCache =
         signal<Record<string, ComponentDefinitionConfigurationDto>>({});
 
-    getByRole(
+    getComponentListByRole(
         role: FlowComponentRole,
     ): Observable<ComponentDefinitionDto[]> {
-        return this.service.getByRole(role);
+        return this.service.getComponentListByRole(role);
     }
 
-    getDefinition(
+    getConfigurationDefinition(
         role: FlowComponentRole,
         type: string,
     ): Observable<ComponentDefinitionConfigurationDto> {
-        return this.service.getDefinition(role, type);
+        return this.service.getConfigurationDefinition(role, type);
     }
 
-    getComponentsByRole(
+    getLoadedComponentListByRole(
         role: FlowComponentRole,
     ): ComponentDefinitionDto[] {
         return this.componentsByRole()[role];
     }
 
-    getCachedDefinition(
+    getCachedConfigurationDefinition(
         role: FlowComponentRole,
         type: string,
     ): ComponentDefinitionConfigurationDto | null {
-        return this.definitionCache()[this.definitionKey(role, type)]
+        return this.configurationDefinitionCache()[this.definitionKey(role, type)]
             ?? null;
     }
 
@@ -66,7 +66,7 @@ export class ComponentDefinitionFacade {
 
         try {
             const components = await firstValueFrom(
-                this.getByRole(role),
+                this.getComponentListByRole(role),
             );
 
             this.componentsByRole.update((state) => ({
@@ -81,22 +81,22 @@ export class ComponentDefinitionFacade {
         }
     }
 
-    async loadDefinition(
+    async loadConfigurationDefinition(
         role: FlowComponentRole,
         type: string,
     ): Promise<ComponentDefinitionConfigurationDto> {
         const key = this.definitionKey(role, type);
-        const cached = this.definitionCache()[key];
+        const cached = this.configurationDefinitionCache()[key];
 
         if (cached) {
             return cached;
         }
 
         const definition = await firstValueFrom(
-            this.getDefinition(role, type),
+            this.getConfigurationDefinition(role, type),
         );
 
-        this.definitionCache.update((state) => ({
+        this.configurationDefinitionCache.update((state) => ({
             ...state,
             [key]: definition,
         }));

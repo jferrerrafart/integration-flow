@@ -14,16 +14,16 @@ import { ComponentDefinitionConfigurationDto } from '../dto/component-definition
 export class ComponentDefinitionService {
     private readonly api = inject(ComponentDefinitionApiService);
 
-    getByRole(
+    getComponentListByRole(
         role: FlowComponentRole,
     ): Observable<ComponentDefinitionDto[]> {
-        return this.api.getAll(role);
+        return this.api.getComponentListByRole(role);
     }
 
-    getDefinition(
+    getConfigurationDefinition(
         role: FlowComponentRole,
         type: string,
     ): Observable<ComponentDefinitionConfigurationDto> {
-        return this.api.getDefinition(role, type);
+        return this.api.getConfigurationDefinition(role, type);
     }
 }

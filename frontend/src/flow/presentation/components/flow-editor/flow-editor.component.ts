@@ -55,11 +55,11 @@ export class FlowEditorComponent implements OnInit {
         });
 
     readonly consumers = computed(() =>
-        this.componentDefinitionFacade.getComponentsByRole('consumer'));
+        this.componentDefinitionFacade.getLoadedComponentListByRole('consumer'));
     readonly services = computed(() =>
-        this.componentDefinitionFacade.getComponentsByRole('service'));
+        this.componentDefinitionFacade.getLoadedComponentListByRole('service'));
     readonly producers = computed(() =>
-        this.componentDefinitionFacade.getComponentsByRole('producer'));
+        this.componentDefinitionFacade.getLoadedComponentListByRole('producer'));
 
     readonly loading = signal(false);
 

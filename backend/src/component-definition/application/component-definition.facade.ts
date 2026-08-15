@@ -9,22 +9,14 @@ export class ComponentDefinitionFacade {
         private readonly service: ComponentDefinitionService,
     ) { }
 
-    getConsumers() {
-        return this.service.getAll(FlowComponentRole.CONSUMER);
+    getComponentListByRole(role: FlowComponentRole) {
+        return this.service.getComponentListByRole(role);
     }
 
-    getServices() {
-        return this.service.getAll(FlowComponentRole.SERVICE);
-    }
-
-    getProducers() {
-        return this.service.getAll(FlowComponentRole.PRODUCER);
-    }
-
-    getDefinition(
+    getConfigurationDefinition(
         role: FlowComponentRole,
         type: string,
     ) {
-        return this.service.getDefinition(role, type);
+        return this.service.getConfigurationDefinition(role, type);
     }
 }

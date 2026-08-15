@@ -14,13 +14,15 @@ export class ComponentDefinitionApiService {
 
     private readonly baseUrl = 'http://localhost:3000/component-definitions';
 
-    getAll(role: FlowComponentRole): Observable<ComponentDefinitionDto[]> {
+    getComponentListByRole(
+        role: FlowComponentRole,
+    ): Observable<ComponentDefinitionDto[]> {
         return this.http.get<ComponentDefinitionDto[]>(
-            `${this.baseUrl}/${role}s`,
+            `${this.baseUrl}/${role}`,
         );
     }
 
-    getDefinition(
+    getConfigurationDefinition(
         role: FlowComponentRole,
         type: string,
     ): Observable<ComponentDefinitionConfigurationDto> {

@@ -37,9 +37,9 @@ export class DynamicConfigurationComponent {
     readonly valueChanged = output<Record<string, unknown>>();
 
     readonly fields = computed<DynamicField[]>(() => {
-        const definition = this.configuration().definition;
+        const configuration = this.configuration().configuration;
 
-        return Object.entries(definition)
+        return Object.entries(configuration)
             .map(([name, value]) => mapDynamicField(name, value))
             .sort((a, b) => a.order - b.order);
     });

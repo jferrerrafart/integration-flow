@@ -6,6 +6,13 @@ import { FlowComponentRole } from 'src/shared/enums/flow-component-role.enum';
 import { ComponentDefinitionDto } from '../dto/component-definition.dto';
 import { ComponentDefinitionConfigurationDto } from '../dto/component-definition-configuration.dto';
 
+interface ComponentDefinitionEntry {
+    id: string;
+    name: string;
+    description: string;
+    type: string;
+}
+
 @Injectable()
 export class ComponentDefinitionService {
     private readonly dataPath = join(
@@ -17,10 +24,12 @@ export class ComponentDefinitionService {
         '../infrastructure/data/challenge-library.json',
     );
 
-    getAll(role: FlowComponentRole): ComponentDefinitionDto[] {
+    getComponentListByRole(
+        role: FlowComponentRole,
+    ): ComponentDefinitionDto[] {
         const index = this.getIndex(role);
 
-        return Object.values(index).map((component: any) => ({
+        return Object.values(index).map((component) => ({
             id: component.id,
             name: component.name,
             description: component.description,
@@ -36,8 +45,8 @@ export class ComponentDefinitionService {
     ): ComponentDefinitionDto {
         const index = this.getIndex(role);
 
-        const component: any = Object.values(index).find(
-            (item: any) => item.type === type,
+        const component = Object.values(index).find(
+            (item) => item.type === type,
         );
 
         if (!component) {
@@ -56,7 +65,7 @@ export class ComponentDefinitionService {
         };
     }
 
-    getDefinition(
+    getConfigurationDefinition(
         role: FlowComponentRole,
         type: string,
     ): ComponentDefinitionConfigurationDto {
@@ -72,7 +81,7 @@ export class ComponentDefinitionService {
 
         return {
             ...component,
-            definition: JSON.parse(
+            configuration: JSON.parse(
                 readFileSync(filePath, 'utf-8'),
             ),
         };
@@ -80,7 +89,7 @@ export class ComponentDefinitionService {
 
     private getIndex(
         role: FlowComponentRole,
-    ): Record<string, any> {
+    ): Record<string, ComponentDefinitionEntry> {
         switch (role) {
             case 'consumer':
                 return this.library.consumer_index;

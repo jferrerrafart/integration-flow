@@ -78,7 +78,7 @@ export class FlowComponentConfiguratorComponent {
         this.configuration.set(null);
 
         try {
-            const configuration = await this.facade.loadDefinition(
+            const configuration = await this.facade.loadConfigurationDefinition(
                 this.role(),
                 component.type,
             );
