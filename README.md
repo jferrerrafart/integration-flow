@@ -32,6 +32,7 @@ integration-flow/
 
 - Node.js 24.x
 - npm
+- A Chrome or Chromium binary, only required to run the frontend unit tests (`npm test` in `frontend`); not needed to build or serve the app.
 
 Using a Node version manager, the repository version can be selected with:
 
@@ -261,32 +262,54 @@ npm run build
 npm test
 ```
 
-The repository includes starter NestJS unit/e2e tests and Angular unit-test setup. The most valuable additional coverage would target flow validation, duplicate-name behavior, component-definition parsing, dynamic field mapping, and full create/update API requests.
+Backend unit tests focus on the areas most likely to hide real bugs: component-definition parsing, flow validation, persistence interactions, and API delegation.
+
+- `component-definition.service.spec.ts` exercises the real `challenge-library.json` and the bundled definition files (no mocking): it asserts that `getComponentListByRole` parses the consumer/service/producer indexes correctly, that `available` reflects whether a `<type>.json` definition file actually exists on disk, and that `getConfigurationDefinition` reads real configuration fields and throws `NotFoundException` for unavailable or role-mismatched types.
+- `flow.service.spec.ts` mocks the TypeORM repositories and covers the core business rules: rejecting a duplicate flow name, rejecting a flow without exactly one consumer or exactly one producer, rejecting a rename to an already-used name, and the persistence flow for `update` (deleting existing `FlowComponent` rows before saving the new ordered list) and `remove`.
+- `flow.controller.spec.ts` mocks `FlowFacade` and asserts that each HTTP handler (`create`, `findAll`, `findOne`, `update`, `remove`) delegates to the facade with the expected arguments.
+
+Jest's `modulePaths` was configured (`"modulePaths": ["<rootDir>/.."]` in `backend/package.json`) so the bare `src/...` imports already used across the backend (e.g. in `component-definition.service.ts` and `flow.controller.ts`) resolve correctly under `ts-jest`, matching how the Nest CLI already resolves them via `tsconfig.json`'s `baseUrl`.
+
+The Angular side uses the default Karma/Jasmine scaffolding (the same `*.spec.ts` convention as the backend, but executed inside a real/headless Chrome browser instead of Node). Beyond the generated `app.component.spec.ts`, three focused unit tests cover the dynamic-field utilities discussed in the limitation above, since they are plain functions and do not require a component test harness:
+
+- `dynamic-field.mapper.spec.ts` asserts that `mapDynamicField` parses `use`, `description`, `order`, boolean vs. string default values, `enumeration`, and `sequence`/`sequenceTemplateFields` the same way the real `autostart`, `return-type`, `messagepart`, and `exception-handling` fields are shaped in the supplied JSON.
+- `dynamic-field.model.spec.ts` asserts the exact priority `resolveEditorType` uses (`sequence` before `enumeration` before `fieldType === 'boolean'`) and that unmapped `fieldType` values such as `cron` or `beanreference` fall back to `text`, plus `getFieldLabel`'s fallback to the field name.
+- `dynamic-field.validators.spec.ts` asserts the `required`, cron-format, and enumeration validators built by `buildFieldValidators`, and the corresponding messages from `resolveFieldErrorMessage`.
+
+Run them with `npm test` in `frontend`; Karma requires a Chrome (or Chromium) binary on the machine running the tests, set via the `CHROME_BIN` environment variable if it is not auto-detected.
 
 ## Simplifications and Unfinished Areas
 
-- The API URLs are currently hardcoded to `localhost`; environment-specific Angular configuration would be preferable.
-- There is no authentication, authorization, pagination, filtering, or optimistic concurrency handling.
-- The backend does not yet validate that every submitted component ID belongs to the selected role or that the stored configuration fully satisfies the definition metadata.
-- SQLite schema synchronization is used instead of migrations.
-- The UI is intentionally a form-based editor and does not provide a visual diagram or drag-and-drop canvas.
-- The broader challenge library is exposed as metadata, but only components with matching local definition files are editable.
-- Error handling is functional but could be improved with a consistent API error contract and more detailed loading/error states around component-definition requests.
+- Main point here is what has been said in the previous "Known Limitation: Component Definitions Do Not Declare a UI Control Type" section.
+- Also due to not understanding the product in its own detail, configuration probably could be improved adding more validators, presets, auto generated id's etc.
+- There is no authentication
+- Pagination for flow list. Pagination should be developed in the backend so that the frontend can choose page and limit for each petition.
+- SQLite schema synchronization is used instead of migrations since we are using SQLite. In production we would be using Postgres with the correspondent configuration.
+- The UI is simple for the test purpose but snackbar could be color coded, and the UI itself could be made in diagram like form.
+- The data we get from the json files should be stored in a database.
 
 ## What I Would Improve With More Time
 
-1. Validate component IDs and definition compatibility on the backend rather than relying primarily on the UI.
-2. Add integration tests for all flow endpoints using an isolated test database.
-3. Add Angular environment files, a configurable API base URL, and a production-oriented deployment configuration.
-4. Replace `synchronize: true` with migrations and add transactional flow updates.
-5. Improve accessibility and error recovery for failed definition loads and deletion requests.
+1. I would have used Postgres and dockerized the whole project, first to make it closer to a production like project, and second to make it simple to execute.
+2. Add validation for required configuration fields in the backend.
+3. Add integration tests for all the components and services.
 
-## AI Tool Usage
+## AI Tools Usage
 
-AI tools were used as an implementation assistant for repository exploration, code drafting, and documentation. The resulting code and this README were checked against the source files, package scripts, API controllers, entities, component-definition JSON, and available tests. The solution remains intentionally understandable and should be reviewed and explained by the author before submission.
+AI tools were used as development assistants throughout the implementation, primarily ChatGPT and GitHub Copilot Chat.
+
+They were used for:
+
+- Exploring implementation approaches and architectural alternatives.
+- Assisting with boilerplate and repetitive code.
+- Reviewing and discussing TypeScript, Angular, NestJS and TypeORM patterns.
+- Identifying potential edge cases and areas for improvement.
+- Discussing trade-offs and validating technical decisions.
+
+All AI-generated suggestions and code were reviewed and validated manually before being incorporated into the project. The final implementation and architectural decisions were made with a focus on keeping the code modular, maintainable and scalable, while following established best practices and the existing project structure.
+
+AI assistance was therefore used as a development and reasoning tool rather than as an autonomous implementation mechanism.
 
 ## License
 
-This project was created solely for the evaluation challenge and is not production or commercial software.# Integration Flow Configuration
-
-Small full-stack application for creating and managing configurable integration flows. The project was built for evaluation purposes based on the supplied component-definition library.
+This project was created solely for the evaluation challenge and is not production or commercial software.
