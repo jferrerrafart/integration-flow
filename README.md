@@ -137,9 +137,83 @@ The frontend requests these definitions when a component is selected, maps the m
 
 The supplied files cover the challenge's demonstrated components: Scheduler, File Reader Service, XML to JSON Transformer, and File Drop. The library itself contains additional catalog entries, but catalog entries without matching local definition JSON files are intentionally unavailable in the editor.
 
+## Known Limitation: Component Definitions Do Not Declare a UI Control Type
+
+The biggest limitation of the supplied component-definition model is that it describes configuration fields for a legacy XML-based schema, not the intended user interaction or UI representation. Each field carries `name`, `type`, `use`, `description`, `order`, and an `appinfo` object, but there is no explicit property that says "render this as a checkbox", "render this as a dropdown", or "render this as a repeatable list".
+
+As a result, the frontend currently has to infer the appropriate control from a combination of loosely related signals:
+
+- `appinfo.sequence` (boolean) marks repeatable fields such as `exception-handling` and `meta-data`.
+- `appinfo.enumeration` (an array) marks selectable values, but it appears under at least two different `appinfo.fieldType` values in the supplied JSON: `"textenumeration"` (e.g. `messagepart`, `messagepart-out`) and `"enumeration"` (e.g. `return-type`). The presence of the enumeration array, rather than the `fieldType` value alone, is what currently identifies a select field.
+- `appinfo.fieldType === "boolean"` marks checkboxes (e.g. `autostart`, `omit-root-element`, `serialize`).
+- Several other `fieldType` values exist (`"cron"`, `"string"`, `"beanreference"`, `"description"`) or are left as an empty string, but they do not explicitly describe their intended UI representation. They currently fall back to a plain text input, even though `cron-expression` could benefit from cron-specific input assistance and `filename-generator` (`"beanreference"`) or `description` (`"description"`) may warrant different controls.
+
+This logic currently lives in `resolveEditorType` (`frontend/src/flow/presentation/components/dynamic-cofiguration/dynamic-field/dynamic-field.model.ts`). It checks `sequence`, then `enumeration`, then `fieldType === 'boolean'`, in that specific order, before defaulting to `text`.
+
+The important limitation is therefore not simply where this logic lives. Moving the mapping to another layer, such as a backend adapter, would improve separation of concerns but would not remove the underlying ambiguity. The adapter would still have to inspect the same legacy metadata and infer that, for example, `fieldType === "boolean"` means `checkbox` or that the presence of `enumeration` means `select`. When a new field type such as `date` appears, the system still needs an additional rule to determine whether it should be rendered as a date picker, a datetime picker, or a plain text input. The source model does not currently contain enough information to make that decision explicitly.
+
+This does not block the four required components, since their fields resolve correctly through the existing heuristics, but it is a significant scalability limitation. Adding genuinely new UI controls (a date picker, numeric input, multiline text area, autocomplete field, etc.) requires introducing new interpretation rules based on the supplied definition. An unrecognized `fieldType` currently falls back silently to a text input, so a mismatch between the definition and the frontend's assumptions can go unnoticed until the rendered form is inspected manually.
+
+### Recommended Direction
+
+For the current challenge, the existing inference can be kept deliberately small and centralized, with explicit handling of unknown field types and tests covering all `fieldType`/metadata combinations present in the supplied definitions. This makes the current implementation easier to understand without pretending that the underlying schema is more expressive than it actually is.
+
+For a production implementation, the preferred solution would be to extend or complement the component-definition contract with explicit UI metadata. For example:
+
+```json
+{
+  "name": "autostart",
+  "type": "boolean",
+  "uiControl": {
+    "type": "checkbox"
+  }
+}
+```
+
+or:
+
+```json
+{
+  "name": "return-type",
+  "type": "string",
+  "uiControl": {
+    "type": "select",
+    "options": ["string", "integer", "boolean"]
+  }
+}
+```
+
+This would make the intended editing experience part of the definition rather than something that clients have to infer.
+
+If the supplied legacy schema cannot be changed, an adapter or normalization layer can still be valuable: it can translate the legacy definition into a UI-oriented definition and keep the legacy vocabulary out of the rendering layer. However, this should be understood as an encapsulation of the ambiguity, not a complete solution to it. The adapter would still require a documented mapping or additional source metadata to determine how ambiguous fields should be presented.
+
+The ideal architecture would therefore be:
+
+```text
+Legacy Component Definition
+            │
+            ▼
+   Definition Adapter
+   (only if legacy schema
+    cannot be changed)
+            │
+            ▼
+    UI-oriented Definition
+    ├── field metadata
+    ├── control type
+    └── control-specific data
+            │
+            ▼
+    Dynamic Form Renderer
+```
+
+This separates the configuration schema from the presentation model while making the UI contract explicit. Most importantly, the frontend would no longer need to infer presentation semantics from unrelated configuration metadata. If the upstream definition can eventually provide this information directly, the adapter can be removed and the explicit UI metadata can become part of the component-definition contract itself.
+
 ## Persistence Model
 
-SQLite was chosen because the challenge needs relational persistence but does not require an external database service. It keeps the project easy to run locally and still exercises TypeORM relations and constraints.
+SQLite was intentionally chosen for the evaluation because it provides relational persistence without requiring an external database service. Since the application uses TypeORM, switching to PostgreSQL would mainly involve changing the database driver and connection configuration, while keeping the domain model and repositories largely unchanged.
+
+For a production deployment, PostgreSQL would be preferred due to its stronger concurrency model, transaction capabilities, operational tooling, and scalability. The production setup would use environment-based database configuration, connection pooling, migrations instead of synchronize, and a managed PostgreSQL instance where appropriate.
 
 The model contains:
 
@@ -216,253 +290,3 @@ AI tools were used as an implementation assistant for repository exploration, co
 This project was created solely for the evaluation challenge and is not production or commercial software.# Integration Flow Configuration
 
 Small full-stack application for creating and managing configurable integration flows. The project was built for evaluation purposes based on the supplied component-definition library.
-
-## Overview
-
-The application provides a form-based Angular UI backed by a NestJS REST API. Users can:
-
-- create, list, edit, and delete integration flows;
-- choose one consumer and one producer;
-- add zero or more ordered service steps, including repeated service types;
-- configure each selected component from its definition metadata;
-- receive feedback for missing required selections, invalid fields, missing definitions, and duplicate flow names.
-
-A flow is persisted as a name and an ordered collection of components:
-
-```text
-Consumer -> Service 1 -> Service 2 -> ... -> Producer
-```
-
-## Tech Stack
-
-- Frontend: Angular 22, Angular Material, Reactive Forms, Signals, RxJS
-- Backend: NestJS 11, TypeORM, SQLite
-- Language: TypeScript
-- Runtime: Node.js 24, as specified in `.nvmrc`
-
-## Project Structure
-
-```text
-backend/    NestJS API, TypeORM entities, component data, and tests
-frontend/   Angular application and form-based flow editor
-```
-
-## Prerequisites
-
-- Node.js 24.x
-- npm
-
-Using `nvm`:
-
-```bash
-nvm install
-nvm use
-```
-
-## Setup and Run
-
-Install dependencies in each application:
-
-```bash
-cd backend
-npm install
-
-cd ../frontend
-npm install
-```
-
-Start the backend in one terminal:
-
-```bash
-cd backend
-npm run start:dev
-```
-
-The API listens on `http://localhost:3000` and enables CORS for `http://localhost:4200`.
-
-Start the frontend in a second terminal:
-
-```bash
-cd frontend
-npm start
-```
-
-Open `http://localhost:4200` in a browser.
-
-The frontend currently uses the backend URL directly in its API services. If either application runs on a different port, update the corresponding base URL and the backend CORS origin.
-
-## Persistence
-
-The backend uses SQLite through TypeORM. It was chosen because this is a small evaluation application and SQLite provides persistence without requiring a separate database server or credentials.
-
-The database is stored at `backend/database.sqlite`. TypeORM is configured with `autoLoadEntities: true` and `synchronize: true`, so the schema is created automatically during development. This is convenient for the challenge, but migrations and a production database configuration would be preferable for a real deployment.
-
-The model consists of:
-
-- `Flow`: unique `name`, timestamps, and a one-to-many relation to components;
-- `FlowComponent`: `role`, `componentId`, `position`, JSON `configuration`, timestamps, and a cascading relation back to its flow.
-
-Deleting a flow cascades to its components. Updating a flow replaces its existing component rows with the submitted ordered collection.
-
-## Component Definitions
-
-The source of truth is `backend/src/component-definition/infrastructure/data/challenge-library.json`.
-
-The backend reads the role-specific indexes in that file (`consumer_index`, `services_index`, and `producer_index`) to expose component IDs, names, descriptions, types, and availability. It then checks for a matching definition file named `<type>.json` in the same data directory and returns that JSON as configuration metadata. The application names these operations `getComponentListByRole` and `getConfigurationDefinition` to distinguish catalog retrieval from configuration metadata retrieval.
-
-The supplied definition files currently available for dynamic configuration are:
-
-- `myesb-cron-consumerType.json` - Scheduler
-- `myesb-filereader-serviceType.json` - File Reader Service
-- `myesb-xml2json-transformerType.json` - XML to JSON Transformer
-- `myesb-file-producerType.json` - File Drop
-
-The catalogue contains more entries than the four locally available definition files. Those entries remain visible in the API catalogue but are marked unavailable by the backend and disabled by the frontend.
-
-The frontend loads component lists by role, keeps the selected component metadata in memory, fetches only its configuration definition on demand, and maps the returned `configuration` metadata, including field type, label, default value, enumeration, requiredness, and sequence information, to Angular form controls. This keeps the editor driven by the supplied metadata rather than hard-coding the four component forms.
-
-## API
-
-### Flows
-
-| Method   | Endpoint    | Purpose                    |
-| -------- | ----------- | -------------------------- |
-| `POST`   | `/flow`     | Create a flow              |
-| `GET`    | `/flow`     | List flows with components |
-| `GET`    | `/flow/:id` | Get one flow               |
-| `PUT`    | `/flow/:id` | Replace a flow definition  |
-| `DELETE` | `/flow/:id` | Delete a flow              |
-
-### Component definitions
-
-| Method | Endpoint                             | Purpose                                    |
-| ------ | ------------------------------------ | ------------------------------------------ |
-| `GET`  | `/component-definitions/:role`       | List metadata for a role                   |
-| `GET`  | `/component-definitions/:role/:type` | Get configuration metadata for a component |
-
-The configuration-definition endpoint returns only the configuration metadata because the selected component's basic metadata is already available from the role list:
-
-```json
-{
-  "configuration": {
-    "id": {},
-    "autostart": {},
-    "cron-expression": {}
-  }
-}
-```
-
-Example flow payload:
-
-```json
-{
-  "name": "Scheduled file conversion",
-  "components": [
-    {
-      "role": "consumer",
-      "componentId": "myesb-cron-consumer",
-      "position": 0,
-      "configuration": {
-        "id": "scheduler-1",
-        "autostart": true
-      }
-    },
-    {
-      "role": "service",
-      "componentId": "myesb-filereader-service",
-      "position": 1,
-      "configuration": {
-        "id": "reader-1",
-        "file-uri": "file:/tmp/input.txt",
-        "return-type": "TEXT"
-      }
-    },
-    {
-      "role": "producer",
-      "componentId": "myesb-file-producer",
-      "position": 2,
-      "configuration": {
-        "id": "drop-1",
-        "directory": "file:/tmp/output"
-      }
-    }
-  ]
-}
-```
-
-## Validation and Error Handling
-
-Frontend validation includes:
-
-- required flow name;
-- exactly one selected consumer and producer before submission;
-- required, enumerated, boolean, and sequence-based configuration controls derived from metadata;
-- disabled selection of catalogue entries whose definition file is unavailable.
-
-Backend validation includes:
-
-- unique flow names, returning a conflict when a duplicate is created or an update changes to an existing name;
-- exactly one component with role `consumer`;
-- exactly one component with role `producer`;
-- not-found responses for missing flows and unavailable component definitions;
-- integer parsing for flow IDs in route parameters.
-
-The backend DTOs currently describe the request shape but do not use `class-validator` decorators or a global `ValidationPipe`. Consequently, the strongest structural validation is currently in the editor and service layer; deeper request validation would be a useful follow-up.
-
-## Tests and Quality Checks
-
-Backend:
-
-```bash
-cd backend
-npm test
-npm run test:e2e
-npm run build
-npm run lint
-```
-
-Frontend:
-
-```bash
-cd frontend
-npm test
-npm run build
-```
-
-The repository includes starter controller and application tests, plus a flow controller test scaffold. Test coverage is intentionally limited for this challenge and does not yet comprehensively exercise definition parsing, persistence, validation edge cases, or the full frontend editor workflow.
-
-## Assumptions and Trade-offs
-
-- Component IDs are the stable references persisted in a flow; definitions are resolved from the bundled data at runtime.
-- `position` is used to preserve service order. The editor rebuilds positions sequentially when saving.
-- Services are optional and can be added, removed, reordered by their form position, and repeated by type.
-- Authentication and authorization are omitted because they are out of scope.
-- The UI is intentionally form-based; it does not attempt to provide a visual graph editor.
-- SQLite plus TypeORM synchronization was favored for zero-configuration local setup over a more operationally complex database.
-- The API and UI currently assume local development URLs rather than environment-based configuration.
-
-## Simplified or Unfinished Areas
-
-- The backend does not yet validate that every submitted `componentId` belongs to the selected role or that its configuration matches the referenced configuration metadata.
-- The backend does not independently validate configuration field requiredness; it stores the JSON submitted by the client.
-- The catalogue exposes many definitions that do not have local JSON files and are therefore unavailable for configuration.
-- Error handling is mainly surfaced through Angular snack bars and console logging; there is no centralized notification or logging strategy.
-- The default Angular and NestJS test suites are present, but domain and integration coverage is still small.
-- There is no Docker Compose setup, migration system, environment configuration, or production deployment profile.
-
-## What I Would Improve With More Time
-
-1. Add `class-validator` DTO rules and a global `ValidationPipe` for request validation.
-2. Validate component IDs, roles, positions, and configurations against the component-definition library on the backend.
-3. Add focused unit tests for definition mapping, dynamic validators, flow validation, and persistence, plus API integration tests for the CRUD lifecycle.
-4. Move frontend API URLs and backend CORS settings to environment configuration.
-5. Replace `synchronize: true` with explicit TypeORM migrations and add a production database profile.
-6. Improve accessibility, loading states, and centralized error handling in the editor.
-
-## AI Tool Usage
-
-AI tools were used as an implementation and review aid for repository exploration, code scaffolding, and documentation drafting. The generated work was checked against the source files, package scripts, component-definition JSON, and available build/test commands. The submitter remains responsible for understanding and explaining the architecture, behavior, assumptions, and trade-offs described here.
-
-## License and Scope
-
-This application was created only for the evaluation challenge described in the brief. It is not production software and is not intended for commercial use.

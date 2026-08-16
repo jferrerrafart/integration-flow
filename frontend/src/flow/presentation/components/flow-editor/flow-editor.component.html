@@ -29,7 +29,9 @@
       [role]="'consumer'"
       [components]="consumers()"
       [initialConfigured]="initialConfiguredFor('consumer')"
+      [markTouched]="submitAttempted()"
       (componentConfigured)="onComponentConfigured('consumer', $event)"
+      (configurationValidChange)="onConsumerValidChanged($event)"
     />
   </section>
 
@@ -65,7 +67,9 @@
           [role]="'service'"
           [components]="services()"
           [initialConfigured]="slot.configured"
+          [markTouched]="submitAttempted()"
           (componentConfigured)="onServiceConfigured(slot.id, $event)"
+          (configurationValidChange)="onServiceValidChanged(slot.id, $event)"
         />
       </div>
     }
@@ -78,7 +82,9 @@
       [role]="'producer'"
       [components]="producers()"
       [initialConfigured]="initialConfiguredFor('producer')"
+      [markTouched]="submitAttempted()"
       (componentConfigured)="onComponentConfigured('producer', $event)"
+      (configurationValidChange)="onProducerValidChanged($event)"
     />
   </section>
 </mat-dialog-content>

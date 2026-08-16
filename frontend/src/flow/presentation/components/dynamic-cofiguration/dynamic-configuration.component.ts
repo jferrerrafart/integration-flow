@@ -34,7 +34,11 @@ export class DynamicConfigurationComponent {
 
     readonly initialValue = input<Record<string, unknown> | null>(null);
 
+    readonly markTouched = input<number>(0);
+
     readonly valueChanged = output<Record<string, unknown>>();
+
+    readonly configurationValidChanged = output<boolean>();
 
     readonly fields = computed<DynamicField[]>(() => {
         const configuration = this.configuration().configuration;
@@ -79,6 +83,7 @@ export class DynamicConfigurationComponent {
             this.valueChanged.emit(
                 form.getRawValue() as Record<string, unknown>,
             );
+            this.configurationValidChanged.emit(form.valid);
         });
 
         effect(() => {
@@ -89,6 +94,14 @@ export class DynamicConfigurationComponent {
             }
 
             this.valueChanged.emit(value);
+            this.configurationValidChanged.emit(this.form().valid);
+        });
+
+        // Reveal validation errors only after the user attempts to submit.
+        effect(() => {
+            if (this.markTouched() > 0) {
+                this.form().markAllAsTouched();
+            }
         });
     }
 

@@ -79,6 +79,11 @@ export class FlowEditorComponent implements OnInit {
     readonly serviceSlots = computed(() => this.state().services);
     private nextServiceSlotId = 1;
 
+    readonly submitAttempted = signal(0);
+    readonly consumerValid = signal(true);
+    readonly producerValid = signal(true);
+    readonly serviceValidById = signal<Record<number, boolean>>({});
+
     readonly editingFlow = this.dialogData?.flow ?? null;
 
     get dialogTitle(): string {
@@ -153,6 +158,23 @@ export class FlowEditorComponent implements OnInit {
             ...state,
             services: state.services.filter((slot) => slot.id !== slotId),
         }));
+
+        this.serviceValidById.update(({ [slotId]: _removed, ...rest }) => rest);
+    }
+
+    onConsumerValidChanged(valid: boolean): void {
+        this.consumerValid.set(valid);
+    }
+
+    onProducerValidChanged(valid: boolean): void {
+        this.producerValid.set(valid);
+    }
+
+    onServiceValidChanged(slotId: number, valid: boolean): void {
+        this.serviceValidById.update((state) => ({
+            ...state,
+            [slotId]: valid,
+        }));
     }
 
     trackByServiceSlotId(_: number, slot: ServiceSlot): number {
@@ -178,6 +200,14 @@ export class FlowEditorComponent implements OnInit {
         if (this.flowForm.invalid) {
             this.flowForm.markAllAsTouched();
             this.showMessage('Flow name is required.');
+            return;
+        }
+
+        if (!this.isConfigurationValid()) {
+            this.submitAttempted.update((count) => count + 1);
+            this.showMessage(
+                'Complete all required configuration fields before saving.',
+            );
             return;
         }
 
@@ -248,5 +278,13 @@ export class FlowEditorComponent implements OnInit {
         this.snackBar.open(message, 'Close', {
             duration: 5000,
         });
+    }
+
+    private isConfigurationValid(): boolean {
+        const servicesValid = this.serviceSlots().every(
+            (slot) => this.serviceValidById()[slot.id] ?? true,
+        );
+
+        return this.consumerValid() && this.producerValid() && servicesValid;
     }
 }

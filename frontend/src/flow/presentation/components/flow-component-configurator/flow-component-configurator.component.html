@@ -10,6 +10,8 @@
     class="dynamic-configuration"
     [configuration]="configuration"
     [initialValue]="initialFormValue()"
+    [markTouched]="markTouched()"
     (valueChanged)="onConfigurationChanged($event)"
+    (configurationValidChanged)="onConfigurationValidChanged($event)"
   />
 }

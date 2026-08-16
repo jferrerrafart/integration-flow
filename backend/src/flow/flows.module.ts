@@ -11,7 +11,7 @@ import { FlowController } from './infrastructure/controllers/flow.controller';
 @Module({
   imports: [TypeOrmModule.forFeature([Flow, FlowComponent])],
   controllers: [FlowController],
-  providers: [/* FlowRepository, */ FlowFacade, FlowService],
-  exports: [/* FlowRepository, */ FlowFacade],
+  providers: [FlowFacade, FlowService],
+  exports: [FlowFacade],
 })
 export class FlowsModule { }

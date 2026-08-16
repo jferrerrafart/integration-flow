@@ -5,6 +5,12 @@
     [value]="selectedComponent()"
     (selectionChange)="onComponentSelected($event.value)"
   >
+    @if (selectedComponent(); as selected) {
+      <mat-select-trigger>
+        {{ selected.name }}
+      </mat-select-trigger>
+    }
+
     @for (component of components(); track component.id) {
       <mat-option [value]="component" [disabled]="!component.available">
         <div class="component-option">

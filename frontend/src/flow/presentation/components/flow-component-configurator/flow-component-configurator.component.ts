@@ -34,6 +34,10 @@ export class FlowComponentConfiguratorComponent {
     readonly initialConfigured =
         input<ConfiguredComponent | null>(null);
 
+    readonly markTouched = input<number>(0);
+
+    readonly configurationValidChange = output<boolean>();
+
     private readonly facade = inject(ComponentDefinitionFacade);
 
     readonly selectedComponent = signal<ComponentDefinitionDto | null>(null);
@@ -46,6 +50,10 @@ export class FlowComponentConfiguratorComponent {
 
     readonly configurationValue =
         signal<Record<string, unknown> | null>(null);
+
+    // No component selected yet means nothing to validate here; missing
+    // selection is reported separately when building the flow payload.
+    readonly configurationValid = signal(true);
 
     constructor() {
         effect(() => {
@@ -76,6 +84,7 @@ export class FlowComponentConfiguratorComponent {
     ): Promise<void> {
         this.selectedComponent.set(component);
         this.configuration.set(null);
+        this.onConfigurationValidChanged(false);
 
         try {
             const configuration = await this.facade.loadConfigurationDefinition(
@@ -117,5 +126,10 @@ export class FlowComponentConfiguratorComponent {
             componentId: selectedComponent.id,
             configuration,
         });
+    }
+
+    onConfigurationValidChanged(valid: boolean): void {
+        this.configurationValid.set(valid);
+        this.configurationValidChange.emit(valid);
     }
 }
