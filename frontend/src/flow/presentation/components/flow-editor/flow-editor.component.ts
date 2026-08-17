@@ -22,6 +22,7 @@ import { FlowEditorService, ConfiguredComponent, FlowEditorState, ServiceSlot } 
 import { FlowResponseDto } from '../../../dto/flow-response.dto';
 import { FlowComponentRole } from '../../../../shared/types/flow-component-role';
 import { getHttpErrorMessage } from '../../../../shared/utils/http-error.util';
+import { ComponentDefinitionDto } from '../../../../component-definition/dto/component-definition.dto';
 
 export interface FlowEditorDialogData {
     flow?: FlowResponseDto;
@@ -54,12 +55,9 @@ export class FlowEditorComponent implements OnInit {
             optional: true,
         });
 
-    readonly consumers = computed(() =>
-        this.componentDefinitionFacade.getLoadedComponentListByRole('consumer'));
-    readonly services = computed(() =>
-        this.componentDefinitionFacade.getLoadedComponentListByRole('service'));
-    readonly producers = computed(() =>
-        this.componentDefinitionFacade.getLoadedComponentListByRole('producer'));
+    readonly consumers = signal<ComponentDefinitionDto[]>([]);
+    readonly services = signal<ComponentDefinitionDto[]>([]);
+    readonly producers = signal<ComponentDefinitionDto[]>([]);
 
     readonly loading = signal(false);
 
@@ -257,11 +255,15 @@ export class FlowEditorComponent implements OnInit {
 
     private async loadComponentDefinitions(): Promise<void> {
         try {
-            await Promise.all([
-                this.componentDefinitionFacade.loadByRole('consumer'),
-                this.componentDefinitionFacade.loadByRole('service'),
-                this.componentDefinitionFacade.loadByRole('producer'),
+            const [consumers, services, producers] = await Promise.all([
+                this.componentDefinitionFacade.loadComponentListByRole('consumer'),
+                this.componentDefinitionFacade.loadComponentListByRole('service'),
+                this.componentDefinitionFacade.loadComponentListByRole('producer'),
             ]);
+
+            this.consumers.set(consumers);
+            this.services.set(services);
+            this.producers.set(producers);
         } catch (error) {
             console.error(
                 'Error loading component definitions',

@@ -86,12 +86,10 @@ export class FlowService {
         const consumers = dto.components.filter((c) => c.role === 'consumer');
         const producers = dto.components.filter((c) => c.role === 'producer');
 
-        if (consumers.length !== 1) {
-            throw new ConflictException('A flow must contain exactly one consumer');
-        }
-
-        if (producers.length !== 1) {
-            throw new ConflictException('A flow must contain exactly one producer');
+        if (consumers.length !== 1 || producers.length !== 1) {
+            throw new ConflictException(
+                'A flow must contain exactly one consumer and exactly one producer',
+            );
         }
     }
 
