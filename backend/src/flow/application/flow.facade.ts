@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { FlowDto } from '../dto/flow.dto';
-import { Flow } from '../infrastructure/entities/Flow.entity';
+import { FlowResponseDto } from '../dto/flow-response.dto';
 import { FlowService } from './flow.service';
 
 @Injectable()
@@ -10,19 +10,19 @@ export class FlowFacade {
         private readonly flowService: FlowService,
     ) { }
 
-    create(dto: FlowDto): Promise<Flow> {
+    create(dto: FlowDto): Promise<FlowResponseDto> {
         return this.flowService.create(dto);
     }
 
-    findAll(): Promise<Flow[]> {
+    findAll(): Promise<FlowResponseDto[]> {
         return this.flowService.findAll();
     }
 
-    findOne(id: number): Promise<Flow> {
+    findOne(id: number): Promise<FlowResponseDto> {
         return this.flowService.findOne(id);
     }
 
-    update(id: number, dto: FlowDto): Promise<Flow> {
+    update(id: number, dto: FlowDto): Promise<FlowResponseDto> {
         return this.flowService.update(id, dto);
     }
 
